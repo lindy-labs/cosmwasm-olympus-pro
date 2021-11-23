@@ -1,6 +1,11 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use cosmwasm_std::Uint128;
+
+use terraswap::asset::AssetInfo;
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub enum Parameter {
     Vesting,
     Payout,
@@ -10,7 +15,7 @@ pub enum Parameter {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub custom_treasury: String,
-    pub principal_token: String,
+    pub principal_token: AssetInfo,
     pub olympus_treasury: String,
     pub subsidy_router: String,
     pub initial_owner: String,
@@ -74,7 +79,7 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub custom_treasury: String,
-    pub principal_token: String,
+    pub principal_token: AssetInfo,
     pub olympus_treasury: String,
     pub subsidy_router: String,
     pub initial_owner: String,

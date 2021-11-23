@@ -1,12 +1,12 @@
 [package]
-name = "sandclock"
+name = "olympus-pro"
 version = "1.0.0"
 authors = ["Sandclock Ecosystem."]
 edition = "2018"
-description = "Common helpers for other sandclock specs"
+description = "Common helpers for olympus pro"
 license = "Apache-2.0"
-repository = "https://github.com/sandclock-org/terra-vaults"
-homepage = "https://sandclock.org/"
+repository = "https://github.com/sandclock-org/terra-olympus-pro"
+homepage = "https://www.olympusdao.finance/"
 documentation = "https://docs.terra.money"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -17,10 +17,10 @@ documentation = "https://docs.terra.money"
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cw20 = "0.8.0" 
-cosmwasm-std = { version = "0.16.0" }
-cosmwasm-storage = { version = "0.16.0" }
-terra-cosmwasm = "2.2.0" 
+cw20 = "0.10.3" 
+cosmwasm-std = { version = "0.16.2" }
+cosmwasm-storage = { version = "0.16.2" }
+terra-cosmwasm = "2.2.0"
 terraswap = "2.4.0"
 schemars = "0.8.3"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
