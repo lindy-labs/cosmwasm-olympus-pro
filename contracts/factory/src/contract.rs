@@ -199,7 +199,7 @@ fn create_bond_and_treasury(
                 code_id: config.custom_treasury_id,
                 funds: vec![],
                 admin: Some(env.contract.address.to_string()),
-                label: "".to_string(),
+                label: "OlympusPro Custom Treasury".to_string(),
                 msg: to_binary(&CustomTreasuryInstantiateMsg {
                     payout_token,
                     initial_owner,
@@ -228,7 +228,7 @@ fn create_bond_from_temp(deps: DepsMut, env: Env, custom_treasury: String) -> St
                 code_id: config.custom_bond_id,
                 funds: vec![],
                 admin: Some(env.contract.address.to_string()),
-                label: "".to_string(),
+                label: "OlympusPro Custom Bond".to_string(),
                 msg: to_binary(&CustomBondInstantiateMsg {
                     custom_treasury: custom_treasury.clone(),
                     principal_token: temp_bond_info.principal_token.to_normal(deps.api)?,
@@ -281,7 +281,7 @@ fn create_bond(
                 code_id: config.custom_bond_id,
                 funds: vec![],
                 admin: Some(env.contract.address.to_string()),
-                label: "".to_string(),
+                label: "OlympusPro Custom Bond".to_string(),
                 msg: to_binary(&CustomBondInstantiateMsg {
                     custom_treasury: custom_treasury.clone(),
                     principal_token,

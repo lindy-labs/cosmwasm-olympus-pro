@@ -158,7 +158,7 @@ fn test_create_bond_by_policy() {
                 code_id: 1,
                 funds: vec![],
                 admin: Some(String::from(MOCK_CONTRACT_ADDR)),
-                label: "".to_string(),
+                label: "OlympusPro Custom Bond".to_string(),
                 msg: to_binary(&CustomBondInstantiateMsg {
                     custom_treasury: String::from("custom_treasury"),
                     principal_token: AssetInfo::NativeToken {
@@ -288,7 +288,7 @@ fn test_create_bond_and_treasury_by_policy() {
                 code_id: 2,
                 funds: vec![],
                 admin: Some(String::from(MOCK_CONTRACT_ADDR)),
-                label: "".to_string(),
+                label: "OlympusPro Custom Treasury".to_string(),
                 msg: to_binary(&CustomTreasuryInstantiateMsg {
                     payout_token: AssetInfo::NativeToken {
                         denom: String::from("payout"),
@@ -348,7 +348,7 @@ fn test_create_bond_and_treasury_reqeust_create_bond_on_first_reply() {
                 code_id: 1,
                 funds: vec![],
                 admin: Some(String::from(MOCK_CONTRACT_ADDR)),
-                label: "".to_string(),
+                label: "OlympusPro Custom Bond".to_string(),
                 msg: to_binary(&CustomBondInstantiateMsg {
                     custom_treasury: String::from("treasury0"),
                     principal_token: AssetInfo::NativeToken {
