@@ -8,7 +8,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
     let resp = ConfigResponse {
         custom_bond_id: config.custom_bond_id,
-        custom_treasury_id: config.custom_bond_id,
+        custom_treasury_id: config.custom_treasury_id,
         treasury: deps.api.addr_humanize(&config.treasury)?.to_string(),
         subsidy_router: deps.api.addr_humanize(&config.subsidy_router)?.to_string(),
         olympus_dao: deps.api.addr_humanize(&config.olympus_dao)?.to_string(),
