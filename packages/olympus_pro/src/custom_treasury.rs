@@ -1,9 +1,13 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use cosmwasm_std::Uint128;
+
+use terraswap::asset::AssetInfo;
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    pub payout_token: String,
+    pub payout_token: AssetInfo,
     pub initial_owner: String,
 }
 
@@ -41,6 +45,6 @@ pub enum QueryMsg {
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub payout_token: String,
+    pub payout_token: AssetInfo,
     pub initial_owner: String,
 }
