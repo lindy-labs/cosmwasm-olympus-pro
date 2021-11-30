@@ -74,7 +74,9 @@ fn send_payout_token(deps: DepsMut, info: MessageInfo, amount: Uint128) -> StdRe
     let whitelist = read_bond_whitelist(
         deps.storage,
         &deps.api.addr_canonicalize(info.sender.as_str())?,
-    )?;
+    )
+    .unwrap_or_default();
+
     if whitelist {
         let config = read_config(deps.storage)?;
 
@@ -87,7 +89,7 @@ fn send_payout_token(deps: DepsMut, info: MessageInfo, amount: Uint128) -> StdRe
             .add_message(asset.clone().into_msg(&deps.querier, info.sender.clone())?)
             .add_attributes(vec![
                 attr("action", "send_payout_token"),
-                attr("asset", amount),
+                attr("amount", amount),
                 attr("recipient", info.sender.to_string()),
             ]))
     } else {
@@ -111,7 +113,7 @@ fn withdraw(
         )
         .add_attributes(vec![
             attr("action", "withdraw"),
-            attr("asset", asset.amount),
+            attr("amount", asset.amount),
             attr("recipient", recipient),
         ]))
 }

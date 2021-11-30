@@ -22,7 +22,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 pub fn query_bond_whitelist(deps: Deps, bond: String) -> StdResult<bool> {
     let whitelist = read_bond_whitelist(deps.storage, &deps.api.addr_canonicalize(&bond)?);
 
-    Ok(whitelist.unwrap())
+    Ok(whitelist.unwrap_or_default())
 }
 
 pub fn query_value_of_token(deps: Deps, principal_asset: Asset) -> StdResult<Uint128> {
