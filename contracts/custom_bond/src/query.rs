@@ -23,8 +23,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         subsidy_router: deps.api.addr_humanize(&config.subsidy_router)?.to_string(),
         policy: deps.api.addr_humanize(&config.policy)?.to_string(),
         olympus_dao: deps.api.addr_humanize(&config.olympus_dao)?.to_string(),
-        tier_ceilings: config.tier_ceilings,
-        fee_rates: config.fee_rates,
+        fee_tiers: config.fee_tiers,
         fee_in_payout: config.fee_in_payout,
     };
 

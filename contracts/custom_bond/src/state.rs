@@ -1,10 +1,10 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{CanonicalAddr, Decimal, StdResult, Storage, Uint128};
+use cosmwasm_std::{CanonicalAddr, StdResult, Storage};
 use cosmwasm_storage::{singleton, singleton_read};
 
-use olympus_pro::custom_bond::State;
+use olympus_pro::custom_bond::{FeeTier, State};
 use terraswap::asset::AssetInfoRaw;
 
 const KEY_CONFIG: &[u8] = b"config";
@@ -19,8 +19,7 @@ pub struct Config {
     pub subsidy_router: CanonicalAddr,
     pub policy: CanonicalAddr,
     pub olympus_dao: CanonicalAddr,
-    pub tier_ceilings: Vec<Uint128>,
-    pub fee_rates: Vec<Decimal>,
+    pub fee_tiers: Vec<FeeTier>,
     pub fee_in_payout: bool,
 }
 
