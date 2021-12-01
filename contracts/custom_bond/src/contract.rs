@@ -54,7 +54,7 @@ pub fn instantiate(
             total_debt: Uint128::zero(),
             terms: Terms {
                 control_variable: Uint128::zero(),
-                vesting_term: Uint128::zero(),
+                vesting_term: 0u64,
                 minimum_price: Uint128::zero(),
                 max_payout: Uint128::zero(),
                 max_debt: Uint128::zero(),
@@ -65,9 +65,10 @@ pub fn instantiate(
                 rate: Uint128::zero(),
                 target: Uint128::zero(),
                 buffer: Uint128::zero(),
-                last_block: 0u64,
+                last_time: 0u64,
             },
             payout_since_last_subsidy: Uint128::zero(),
+            total_principal_bonded: Uint128::zero(),
         },
     )?;
 

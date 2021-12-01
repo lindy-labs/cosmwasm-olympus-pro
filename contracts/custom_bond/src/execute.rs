@@ -4,7 +4,10 @@ use cosmwasm_std::{
 
 use olympus_pro::custom_bond::{Adjustment, Terms};
 
-use crate::state::{read_config, read_state, store_config, store_state};
+use crate::{
+    state::{read_config, read_state, store_config, store_state},
+    utils::decay_debt,
+};
 
 pub fn update_config(
     deps: DepsMut,
@@ -39,7 +42,7 @@ pub fn initialize_bond(
     }
 
     state.terms = terms;
-    state.last_decay = env.block.height;
+    state.last_decay = env.block.time.seconds();
     state.total_debt = initial_debt;
 
     store_state(deps.storage, &state)?;
@@ -49,14 +52,14 @@ pub fn initialize_bond(
 
 pub fn set_bond_terms(
     deps: DepsMut,
-    vesting_term: Option<Uint128>,
+    vesting_term: Option<u64>,
     max_payout: Option<Uint128>,
     max_debt: Option<Uint128>,
 ) -> StdResult<Response> {
     let mut state = read_state(deps.storage)?;
 
     if let Some(vesting_term) = vesting_term {
-        if vesting_term < Uint128::from(10000u128) {
+        if vesting_term < 129600 {
             return Err(StdError::generic_err(
                 "vesting must be longer than 36 hours",
             ));
@@ -99,7 +102,7 @@ pub fn set_adjustment(
         rate: increment,
         target,
         buffer,
-        last_block: env.block.height,
+        last_time: env.block.time.seconds(),
     };
 
     store_state(deps.storage, &state)?;
@@ -117,6 +120,17 @@ pub fn pay_subsidy(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
     let mut state = read_state(deps.storage)?;
 
     state.payout_since_last_subsidy = Uint128::zero();
+
+    store_state(deps.storage, &state)?;
+
+    Ok(Response::new().add_attributes(vec![attr("action", "pay_subsidy")]))
+}
+
+pub fn deposit(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Response> {
+    let config = read_config(deps.storage)?;
+    let mut state = read_state(deps.storage)?;
+
+    decay_debt(env, &mut state);
 
     store_state(deps.storage, &state)?;
 

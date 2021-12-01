@@ -2,8 +2,8 @@
 use cosmwasm_std::entry_point;
 
 use cosmwasm_std::{
-    attr, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response, StdError,
-    StdResult, SubMsg, WasmMsg,
+    attr, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response,
+    StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 
 use olympus_pro::custom_bond::InstantiateMsg as CustomBondInstantiateMsg;
@@ -57,7 +57,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             principal_token,
             initial_owner,
             tier_ceilings,
-            fees,
+            fee_rates,
             fee_in_payout,
         } => create_bond_and_treasury(
             deps,
@@ -66,7 +66,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             principal_token,
             initial_owner,
             tier_ceilings,
-            fees,
+            fee_rates,
             fee_in_payout,
         ),
         ExecuteMsg::CreateBond {
@@ -74,7 +74,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             custom_treasury,
             initial_owner,
             tier_ceilings,
-            fees,
+            fee_rates,
             fee_in_payout,
         } => create_bond(
             deps,
@@ -83,7 +83,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             custom_treasury,
             initial_owner,
             tier_ceilings,
-            fees,
+            fee_rates,
             fee_in_payout,
         ),
     }
@@ -172,8 +172,8 @@ fn create_bond_and_treasury(
     payout_token: AssetInfo,
     principal_token: AssetInfo,
     initial_owner: String,
-    tier_ceilings: Vec<u64>,
-    fees: Vec<u64>,
+    tier_ceilings: Vec<Uint128>,
+    fee_rates: Vec<Decimal>,
     fee_in_payout: bool,
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
@@ -185,7 +185,7 @@ fn create_bond_and_treasury(
             custom_treasury: None,
             initial_owner: deps.api.addr_canonicalize(&initial_owner)?,
             tier_ceilings: tier_ceilings.clone(),
-            fees: fees.clone(),
+            fee_rates: fee_rates.clone(),
             fee_in_payout,
         },
     )?;
@@ -240,7 +240,7 @@ fn create_bond_from_temp(deps: DepsMut, env: Env, custom_treasury: String) -> St
                         .to_string(),
                     olympus_dao: deps.api.addr_humanize(&config.olympus_dao)?.to_string(),
                     tier_ceilings: temp_bond_info.tier_ceilings,
-                    fees: temp_bond_info.fees,
+                    fee_rates: temp_bond_info.fee_rates,
                     fee_in_payout: temp_bond_info.fee_in_payout,
                 })?,
             }
@@ -255,8 +255,8 @@ fn create_bond(
     principal_token: AssetInfo,
     custom_treasury: String,
     initial_owner: String,
-    tier_ceilings: Vec<u64>,
-    fees: Vec<u64>,
+    tier_ceilings: Vec<Uint128>,
+    fee_rates: Vec<Decimal>,
     fee_in_payout: bool,
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
@@ -268,7 +268,7 @@ fn create_bond(
             custom_treasury: Some(deps.api.addr_canonicalize(&custom_treasury)?),
             initial_owner: deps.api.addr_canonicalize(&initial_owner)?,
             tier_ceilings: tier_ceilings.clone(),
-            fees: fees.clone(),
+            fee_rates: fee_rates.clone(),
             fee_in_payout,
         },
     )?;
@@ -291,7 +291,7 @@ fn create_bond(
                     initial_owner,
                     olympus_dao: deps.api.addr_humanize(&config.olympus_dao)?.to_string(),
                     tier_ceilings,
-                    fees,
+                    fee_rates,
                     fee_in_payout,
                 })?,
             }
@@ -311,7 +311,7 @@ fn register_bond(deps: DepsMut, bond: String) -> StdResult<Response> {
             bond: deps.api.addr_canonicalize(&bond)?,
             initial_owner: temp_bond_info.initial_owner,
             tier_ceilings: temp_bond_info.tier_ceilings,
-            fees: temp_bond_info.fees,
+            fee_rates: temp_bond_info.fee_rates,
         },
     )?;
 

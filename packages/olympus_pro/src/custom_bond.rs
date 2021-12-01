@@ -13,8 +13,8 @@ pub struct InstantiateMsg {
     pub subsidy_router: String,
     pub initial_owner: String,
     pub olympus_dao: String,
-    pub tier_ceilings: Vec<u64>,
-    pub fees: Vec<u64>,
+    pub tier_ceilings: Vec<Uint128>,
+    pub fee_rates: Vec<Decimal>,
     pub fee_in_payout: bool,
 }
 
@@ -26,7 +26,7 @@ pub enum ExecuteMsg {
         initial_debt: Uint128,
     },
     SetBondTerms {
-        vesting_term: Option<Uint128>,
+        vesting_term: Option<u64>,
         max_payout: Option<Uint128>,
         max_debt: Option<Uint128>,
     },
@@ -78,15 +78,15 @@ pub struct ConfigResponse {
     pub subsidy_router: String,
     pub policy: String,
     pub olympus_dao: String,
-    pub tier_ceilings: Vec<u64>,
-    pub fees: Vec<u64>,
+    pub tier_ceilings: Vec<Uint128>,
+    pub fee_rates: Vec<Decimal>,
     pub fee_in_payout: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Terms {
     pub control_variable: Uint128,
-    pub vesting_term: Uint128,
+    pub vesting_term: u64,
     pub minimum_price: Uint128,
     pub max_payout: Uint128,
     pub max_debt: Uint128,
@@ -98,7 +98,7 @@ pub struct Adjustment {
     pub rate: Uint128,
     pub target: Uint128,
     pub buffer: Uint128,
-    pub last_block: u64,
+    pub last_time: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -109,4 +109,5 @@ pub struct State {
     pub last_decay: u64,
     pub adjustment: Adjustment,
     pub payout_since_last_subsidy: Uint128,
+    pub total_principal_bonded: Uint128,
 }

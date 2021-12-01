@@ -1,7 +1,7 @@
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    attr, from_binary, to_binary, ContractResult, Reply, ReplyOn, StdError, SubMsg,
-    SubMsgExecutionResponse, WasmMsg,
+    attr, from_binary, to_binary, ContractResult, Decimal, Reply, ReplyOn, StdError, SubMsg,
+    SubMsgExecutionResponse, Uint128, WasmMsg,
 };
 
 use olympus_pro::{
@@ -120,8 +120,8 @@ fn test_create_bond_fails_if_unauthorized() {
         },
         custom_treasury: String::from("custom_treasury"),
         initial_owner: String::from("initial_owner"),
-        tier_ceilings: vec![1, 2],
-        fees: vec![3, 4],
+        tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
+        fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
         fee_in_payout: true,
     };
 
@@ -142,8 +142,8 @@ fn test_create_bond_by_policy() {
         },
         custom_treasury: String::from("custom_treasury"),
         initial_owner: String::from("initial_owner"),
-        tier_ceilings: vec![1, 2],
-        fees: vec![3, 4],
+        tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
+        fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
         fee_in_payout: true,
     };
 
@@ -168,8 +168,8 @@ fn test_create_bond_by_policy() {
                     subsidy_router: String::from("subsidy_router"),
                     initial_owner: String::from("initial_owner"),
                     olympus_dao: String::from("olympus_dao"),
-                    tier_ceilings: vec![1, 2],
-                    fees: vec![3, 4],
+                    tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
+                    fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
                     fee_in_payout: true,
                 })
                 .unwrap(),
@@ -193,8 +193,8 @@ fn test_create_bond_register_bond_on_reply() {
         },
         custom_treasury: String::from("custom_treasury"),
         initial_owner: String::from("initial_owner"),
-        tier_ceilings: vec![1, 2],
-        fees: vec![3, 4],
+        tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
+        fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
         fee_in_payout: true,
     };
 
@@ -227,8 +227,8 @@ fn test_create_bond_register_bond_on_reply() {
             custom_treasury: String::from("custom_treasury"),
             bond: String::from("bond0"),
             initial_owner: String::from("initial_owner"),
-            tier_ceilings: vec![1, 2],
-            fees: vec![3, 4],
+            tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
+            fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
         },
         bond_info
     );
@@ -249,8 +249,8 @@ fn test_create_bond_and_treasury_fails_if_unauthorized() {
             denom: String::from("principal"),
         },
         initial_owner: String::from("initial_owner"),
-        tier_ceilings: vec![1, 2],
-        fees: vec![3, 4],
+        tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
+        fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
         fee_in_payout: true,
     };
 
@@ -273,8 +273,8 @@ fn test_create_bond_and_treasury_by_policy() {
             denom: String::from("principal"),
         },
         initial_owner: String::from("initial_owner"),
-        tier_ceilings: vec![1, 2],
-        fees: vec![3, 4],
+        tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
+        fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
         fee_in_payout: true,
     };
 
@@ -319,8 +319,8 @@ fn test_create_bond_and_treasury_reqeust_create_bond_on_first_reply() {
             denom: String::from("principal"),
         },
         initial_owner: String::from("initial_owner"),
-        tier_ceilings: vec![1, 2],
-        fees: vec![3, 4],
+        tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
+        fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
         fee_in_payout: true,
     };
 
@@ -359,8 +359,8 @@ fn test_create_bond_and_treasury_reqeust_create_bond_on_first_reply() {
                     subsidy_router: String::from("subsidy_router"),
                     initial_owner: String::from("initial_owner"),
                     olympus_dao: String::from("olympus_dao"),
-                    tier_ceilings: vec![1, 2],
-                    fees: vec![3, 4],
+                    tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
+                    fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
                     fee_in_payout: true,
                 })
                 .unwrap(),
@@ -386,8 +386,8 @@ fn test_create_bond_and_treasury_register_bond_on_second_reply() {
             denom: String::from("principal"),
         },
         initial_owner: String::from("initial_owner"),
-        tier_ceilings: vec![1, 2],
-        fees: vec![3, 4],
+        tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
+        fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
         fee_in_payout: true,
     };
 
@@ -433,8 +433,8 @@ fn test_create_bond_and_treasury_register_bond_on_second_reply() {
             custom_treasury: String::from("treasury0"),
             bond: String::from("bond0"),
             initial_owner: String::from("initial_owner"),
-            tier_ceilings: vec![1, 2],
-            fees: vec![3, 4],
+            tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
+            fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
         },
         bond_info
     );

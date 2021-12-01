@@ -1,6 +1,8 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use cosmwasm_std::{Decimal, Uint128};
+
 use terraswap::asset::AssetInfo;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -24,16 +26,16 @@ pub enum ExecuteMsg {
         payout_token: AssetInfo,
         principal_token: AssetInfo,
         initial_owner: String,
-        tier_ceilings: Vec<u64>,
-        fees: Vec<u64>,
+        tier_ceilings: Vec<Uint128>,
+        fee_rates: Vec<Decimal>,
         fee_in_payout: bool,
     },
     CreateBond {
         principal_token: AssetInfo,
         custom_treasury: String,
         initial_owner: String,
-        tier_ceilings: Vec<u64>,
-        fees: Vec<u64>,
+        tier_ceilings: Vec<Uint128>,
+        fee_rates: Vec<Decimal>,
         fee_in_payout: bool,
     },
 }
@@ -67,6 +69,6 @@ pub struct BondInfoResponse {
     pub custom_treasury: String,
     pub bond: String,
     pub initial_owner: String,
-    pub tier_ceilings: Vec<u64>,
-    pub fees: Vec<u64>,
+    pub tier_ceilings: Vec<Uint128>,
+    pub fee_rates: Vec<Decimal>,
 }

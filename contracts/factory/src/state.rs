@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{CanonicalAddr, StdResult, Storage};
+use cosmwasm_std::{CanonicalAddr, Decimal, StdResult, Storage, Uint128};
 use cosmwasm_storage::{bucket, bucket_read, singleton, singleton_read, Singleton};
 
 use terraswap::asset::AssetInfoRaw;
@@ -32,8 +32,8 @@ pub struct BondInfo {
     pub custom_treasury: CanonicalAddr,
     pub bond: CanonicalAddr,
     pub initial_owner: CanonicalAddr,
-    pub tier_ceilings: Vec<u64>,
-    pub fees: Vec<u64>,
+    pub tier_ceilings: Vec<Uint128>,
+    pub fee_rates: Vec<Decimal>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -41,8 +41,8 @@ pub struct TempBondInfo {
     pub principal_token: AssetInfoRaw,
     pub custom_treasury: Option<CanonicalAddr>,
     pub initial_owner: CanonicalAddr,
-    pub tier_ceilings: Vec<u64>,
-    pub fees: Vec<u64>,
+    pub tier_ceilings: Vec<Uint128>,
+    pub fee_rates: Vec<Decimal>,
     pub fee_in_payout: bool,
 }
 
