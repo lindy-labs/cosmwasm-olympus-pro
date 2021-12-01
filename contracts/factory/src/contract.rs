@@ -238,6 +238,7 @@ fn create_bond_from_temp(deps: DepsMut, env: Env, custom_treasury: String) -> St
                         .api
                         .addr_humanize(&temp_bond_info.initial_owner)?
                         .to_string(),
+                    olympus_dao: deps.api.addr_humanize(&config.olympus_dao)?.to_string(),
                     tier_ceilings: temp_bond_info.tier_ceilings,
                     fees: temp_bond_info.fees,
                     fee_in_payout: temp_bond_info.fee_in_payout,
@@ -288,6 +289,7 @@ fn create_bond(
                     olympus_treasury: custom_treasury,
                     subsidy_router: deps.api.addr_humanize(&config.subsidy_router)?.to_string(),
                     initial_owner,
+                    olympus_dao: deps.api.addr_humanize(&config.olympus_dao)?.to_string(),
                     tier_ceilings,
                     fees,
                     fee_in_payout,

@@ -24,6 +24,7 @@ backtraces = ["cosmwasm-std/backtraces"]
 [dependencies]
 cosmwasm-std = { version = "0.16.2" }
 cosmwasm-storage = { version = "0.16.2" }
+terraswap = "2.4.0"
 schemars = "0.8.7"
 serde = { version = "1.0.130", default-features = false, features = ["derive"] }
 olympus-pro = { version = "1.0.0", path = "../../packages/olympus_pro" }
