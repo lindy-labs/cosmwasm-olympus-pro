@@ -43,6 +43,50 @@ fn test_initialization() {
 }
 
 #[test]
+fn test_update_config_fails_if_unauthorized() {
+    let mut deps = mock_dependencies(&[]);
+
+    instantiate_custom_treasury(&mut deps);
+
+    let info = mock_info("addr", &[]);
+    let msg = ExecuteMsg::UpdateConfig {
+        policy: Some(String::from("new_policy")),
+    };
+
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    assert_eq!(res, StdError::generic_err("unauthorized"));
+}
+
+#[test]
+fn test_update_config_by_policy() {
+    let mut deps = mock_dependencies(&[]);
+
+    instantiate_custom_treasury(&mut deps);
+
+    let info = mock_info("policy", &[]);
+
+    let msg = ExecuteMsg::UpdateConfig {
+        policy: Some(String::from("new_policy")),
+    };
+
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    assert_eq!(res.attributes, vec![attr("action", "update_config"),]);
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        ConfigResponse {
+            payout_token: AssetInfo::NativeToken {
+                denom: "upayout".to_string(),
+            },
+            policy: String::from("new_policy"),
+        },
+        config
+    );
+}
+
+#[test]
 fn test_whitelist_bond_fails_if_unauthorized() {
     let mut deps = mock_dependencies(&[]);
 

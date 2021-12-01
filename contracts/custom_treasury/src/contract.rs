@@ -39,9 +39,16 @@ pub fn execute(
 ) -> StdResult<Response> {
     match msg {
         ExecuteMsg::SendPayoutTokens { amount } => send_payout_token(deps, info, amount),
-        ExecuteMsg::Withdraw { asset, recipient } => withdraw(deps, info, asset, recipient),
-        ExecuteMsg::WhitelistBond { bond, whitelist } => {
-            whitelist_bond(deps, info, bond, whitelist)
+        _ => {
+            assert_policy_privilege(deps.as_ref(), info)?;
+            match msg {
+                ExecuteMsg::UpdateConfig { policy } => update_config(deps, policy),
+                ExecuteMsg::Withdraw { asset, recipient } => withdraw(deps, asset, recipient),
+                ExecuteMsg::WhitelistBond { bond, whitelist } => {
+                    whitelist_bond(deps, bond, whitelist)
+                }
+                _ => panic!("Do not enter here"),
+            }
         }
     }
 }
@@ -68,6 +75,18 @@ fn assert_policy_privilege(deps: Deps, info: MessageInfo) -> StdResult<()> {
     }
 
     Ok(())
+}
+
+fn update_config(deps: DepsMut, policy: Option<String>) -> StdResult<Response> {
+    let mut config = read_config(deps.storage)?;
+
+    if let Some(policy) = policy {
+        config.policy = deps.api.addr_canonicalize(&policy)?;
+    }
+
+    store_config(deps.storage, &config)?;
+
+    Ok(Response::new().add_attributes(vec![attr("action", "update_config")]))
 }
 
 fn send_payout_token(deps: DepsMut, info: MessageInfo, amount: Uint128) -> StdResult<Response> {
@@ -97,14 +116,7 @@ fn send_payout_token(deps: DepsMut, info: MessageInfo, amount: Uint128) -> StdRe
     }
 }
 
-fn withdraw(
-    deps: DepsMut,
-    info: MessageInfo,
-    asset: Asset,
-    recipient: String,
-) -> StdResult<Response> {
-    assert_policy_privilege(deps.as_ref(), info)?;
-
+fn withdraw(deps: DepsMut, asset: Asset, recipient: String) -> StdResult<Response> {
     Ok(Response::new()
         .add_message(
             asset
@@ -118,14 +130,7 @@ fn withdraw(
         ]))
 }
 
-fn whitelist_bond(
-    deps: DepsMut,
-    info: MessageInfo,
-    bond: String,
-    whitelist: bool,
-) -> StdResult<Response> {
-    assert_policy_privilege(deps.as_ref(), info)?;
-
+fn whitelist_bond(deps: DepsMut, bond: String, whitelist: bool) -> StdResult<Response> {
     store_bond_whitelist(
         deps.storage,
         &deps.api.addr_canonicalize(&bond)?,
