@@ -5,7 +5,7 @@ use cosmwasm_std::{
 };
 
 use olympus_pro::{
-    custom_bond::InstantiateMsg as CustomBondInstantiateMsg,
+    custom_bond::{FeeTier, InstantiateMsg as CustomBondInstantiateMsg},
     custom_treasury::InstantiateMsg as CustomTreasuryInstantiateMsg,
     factory::{BondInfoResponse, ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg},
 };
@@ -120,8 +120,16 @@ fn test_create_bond_fails_if_unauthorized() {
         },
         custom_treasury: String::from("custom_treasury"),
         initial_owner: String::from("initial_owner"),
-        tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
-        fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
+        fee_tiers: vec![
+            FeeTier {
+                tier_ceiling: Uint128::from(1u128),
+                fee_rate: Decimal::percent(3),
+            },
+            FeeTier {
+                tier_ceiling: Uint128::from(2u128),
+                fee_rate: Decimal::percent(4),
+            },
+        ],
         fee_in_payout: true,
     };
 
@@ -142,8 +150,16 @@ fn test_create_bond_by_policy() {
         },
         custom_treasury: String::from("custom_treasury"),
         initial_owner: String::from("initial_owner"),
-        tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
-        fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
+        fee_tiers: vec![
+            FeeTier {
+                tier_ceiling: Uint128::from(1u128),
+                fee_rate: Decimal::percent(3),
+            },
+            FeeTier {
+                tier_ceiling: Uint128::from(2u128),
+                fee_rate: Decimal::percent(4),
+            },
+        ],
         fee_in_payout: true,
     };
 
@@ -168,8 +184,16 @@ fn test_create_bond_by_policy() {
                     subsidy_router: String::from("subsidy_router"),
                     initial_owner: String::from("initial_owner"),
                     olympus_dao: String::from("olympus_dao"),
-                    tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
-                    fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
+                    fee_tiers: vec![
+                        FeeTier {
+                            tier_ceiling: Uint128::from(1u128),
+                            fee_rate: Decimal::percent(3),
+                        },
+                        FeeTier {
+                            tier_ceiling: Uint128::from(2u128),
+                            fee_rate: Decimal::percent(4),
+                        },
+                    ],
                     fee_in_payout: true,
                 })
                 .unwrap(),
@@ -193,8 +217,16 @@ fn test_create_bond_register_bond_on_reply() {
         },
         custom_treasury: String::from("custom_treasury"),
         initial_owner: String::from("initial_owner"),
-        tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
-        fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
+        fee_tiers: vec![
+            FeeTier {
+                tier_ceiling: Uint128::from(1u128),
+                fee_rate: Decimal::percent(3),
+            },
+            FeeTier {
+                tier_ceiling: Uint128::from(2u128),
+                fee_rate: Decimal::percent(4),
+            },
+        ],
         fee_in_payout: true,
     };
 
@@ -227,8 +259,16 @@ fn test_create_bond_register_bond_on_reply() {
             custom_treasury: String::from("custom_treasury"),
             bond: String::from("bond0"),
             initial_owner: String::from("initial_owner"),
-            tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
-            fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
+            fee_tiers: vec![
+                FeeTier {
+                    tier_ceiling: Uint128::from(1u128),
+                    fee_rate: Decimal::percent(3),
+                },
+                FeeTier {
+                    tier_ceiling: Uint128::from(2u128),
+                    fee_rate: Decimal::percent(4),
+                },
+            ],
         },
         bond_info
     );
@@ -249,8 +289,16 @@ fn test_create_bond_and_treasury_fails_if_unauthorized() {
             denom: String::from("principal"),
         },
         initial_owner: String::from("initial_owner"),
-        tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
-        fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
+        fee_tiers: vec![
+            FeeTier {
+                tier_ceiling: Uint128::from(1u128),
+                fee_rate: Decimal::percent(3),
+            },
+            FeeTier {
+                tier_ceiling: Uint128::from(2u128),
+                fee_rate: Decimal::percent(4),
+            },
+        ],
         fee_in_payout: true,
     };
 
@@ -273,8 +321,16 @@ fn test_create_bond_and_treasury_by_policy() {
             denom: String::from("principal"),
         },
         initial_owner: String::from("initial_owner"),
-        tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
-        fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
+        fee_tiers: vec![
+            FeeTier {
+                tier_ceiling: Uint128::from(1u128),
+                fee_rate: Decimal::percent(3),
+            },
+            FeeTier {
+                tier_ceiling: Uint128::from(2u128),
+                fee_rate: Decimal::percent(4),
+            },
+        ],
         fee_in_payout: true,
     };
 
@@ -319,8 +375,16 @@ fn test_create_bond_and_treasury_reqeust_create_bond_on_first_reply() {
             denom: String::from("principal"),
         },
         initial_owner: String::from("initial_owner"),
-        tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
-        fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
+        fee_tiers: vec![
+            FeeTier {
+                tier_ceiling: Uint128::from(1u128),
+                fee_rate: Decimal::percent(3),
+            },
+            FeeTier {
+                tier_ceiling: Uint128::from(2u128),
+                fee_rate: Decimal::percent(4),
+            },
+        ],
         fee_in_payout: true,
     };
 
@@ -359,8 +423,16 @@ fn test_create_bond_and_treasury_reqeust_create_bond_on_first_reply() {
                     subsidy_router: String::from("subsidy_router"),
                     initial_owner: String::from("initial_owner"),
                     olympus_dao: String::from("olympus_dao"),
-                    tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
-                    fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
+                    fee_tiers: vec![
+                        FeeTier {
+                            tier_ceiling: Uint128::from(1u128),
+                            fee_rate: Decimal::percent(3),
+                        },
+                        FeeTier {
+                            tier_ceiling: Uint128::from(2u128),
+                            fee_rate: Decimal::percent(4),
+                        },
+                    ],
                     fee_in_payout: true,
                 })
                 .unwrap(),
@@ -386,8 +458,16 @@ fn test_create_bond_and_treasury_register_bond_on_second_reply() {
             denom: String::from("principal"),
         },
         initial_owner: String::from("initial_owner"),
-        tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
-        fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
+        fee_tiers: vec![
+            FeeTier {
+                tier_ceiling: Uint128::from(1u128),
+                fee_rate: Decimal::percent(3),
+            },
+            FeeTier {
+                tier_ceiling: Uint128::from(2u128),
+                fee_rate: Decimal::percent(4),
+            },
+        ],
         fee_in_payout: true,
     };
 
@@ -433,8 +513,16 @@ fn test_create_bond_and_treasury_register_bond_on_second_reply() {
             custom_treasury: String::from("treasury0"),
             bond: String::from("bond0"),
             initial_owner: String::from("initial_owner"),
-            tier_ceilings: vec![Uint128::from(1u128), Uint128::from(2u128)],
-            fee_rates: vec![Decimal::percent(3), Decimal::percent(4)],
+            fee_tiers: vec![
+                FeeTier {
+                    tier_ceiling: Uint128::from(1u128),
+                    fee_rate: Decimal::percent(3),
+                },
+                FeeTier {
+                    tier_ceiling: Uint128::from(2u128),
+                    fee_rate: Decimal::percent(4),
+                },
+            ],
         },
         bond_info
     );

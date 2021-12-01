@@ -13,8 +13,7 @@ pub struct InstantiateMsg {
     pub subsidy_router: String,
     pub initial_owner: String,
     pub olympus_dao: String,
-    pub tier_ceilings: Vec<Uint128>,
-    pub fee_rates: Vec<Decimal>,
+    pub fee_tiers: Vec<FeeTier>,
     pub fee_in_payout: bool,
 }
 
@@ -78,8 +77,7 @@ pub struct ConfigResponse {
     pub subsidy_router: String,
     pub policy: String,
     pub olympus_dao: String,
-    pub tier_ceilings: Vec<Uint128>,
-    pub fee_rates: Vec<Decimal>,
+    pub fee_tiers: Vec<FeeTier>,
     pub fee_in_payout: bool,
 }
 
@@ -110,4 +108,10 @@ pub struct State {
     pub adjustment: Adjustment,
     pub payout_since_last_subsidy: Uint128,
     pub total_principal_bonded: Uint128,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct FeeTier {
+    pub tier_ceiling: Uint128,
+    pub fee_rate: Decimal,
 }

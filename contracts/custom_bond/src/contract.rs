@@ -22,7 +22,7 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
-    if msg.tier_ceilings.len() != msg.fees.len() {
+    if msg.tier_ceilings.len() != msg.fee_rates.len() {
         return Err(StdError::generic_err(
             "tier length and fee length not the same",
         ));
@@ -42,7 +42,7 @@ pub fn instantiate(
             policy: deps.api.addr_canonicalize(&msg.initial_owner)?,
             olympus_dao: deps.api.addr_canonicalize(&msg.olympus_dao)?,
             tier_ceilings: msg.tier_ceilings,
-            fees: msg.fees,
+            fee_rates: msg.fee_rates,
             fee_in_payout: msg.fee_in_payout,
         },
     )?;

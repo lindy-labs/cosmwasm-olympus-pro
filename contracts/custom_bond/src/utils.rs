@@ -4,7 +4,7 @@ use cosmwasm_std::{
 
 use olympus_pro::custom_bond::{Adjustment, State, Terms};
 
-use crate::state::{read_config, read_state, store_config, store_state};
+use crate::state::{read_config, read_state, store_config, store_state, Config};
 
 fn debt_decay(current_time: u64, state: State) -> Uint128 {
     let time_since_last = current_time - state.last_decay;
