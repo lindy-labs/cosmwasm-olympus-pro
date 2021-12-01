@@ -1,4 +1,6 @@
-use cosmwasm_std::{attr, Decimal, DepsMut, Env, Response, StdError, StdResult, Uint128};
+use cosmwasm_std::{
+    attr, Decimal, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
+};
 
 use olympus_pro::custom_bond::{Adjustment, Terms};
 
@@ -103,4 +105,20 @@ pub fn set_adjustment(
     store_state(deps.storage, &state)?;
 
     Ok(Response::new().add_attributes(vec![attr("action", "set_adjustment")]))
+}
+
+pub fn pay_subsidy(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
+    if read_config(deps.storage)?.subsidy_router
+        != deps.api.addr_canonicalize(info.sender.as_str())?
+    {
+        return Err(StdError::generic_err("only subsidy controller"));
+    }
+
+    let mut state = read_state(deps.storage)?;
+
+    state.payout_since_last_subsidy = Uint128::zero();
+
+    store_state(deps.storage, &state)?;
+
+    Ok(Response::new().add_attributes(vec![attr("action", "pay_subsidy")]))
 }

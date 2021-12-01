@@ -108,4 +108,5 @@ pub struct State {
     pub terms: Terms,
     pub last_decay: u64,
     pub adjustment: Adjustment,
+    pub payout_since_last_subsidy: Uint128,
 }

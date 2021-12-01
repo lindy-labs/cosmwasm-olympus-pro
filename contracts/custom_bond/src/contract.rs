@@ -10,7 +10,7 @@ use olympus_pro::custom_bond::{
 };
 
 use crate::{
-    execute::{initialize_bond, set_adjustment, set_bond_terms, update_config},
+    execute::{initialize_bond, pay_subsidy, set_adjustment, set_bond_terms, update_config},
     query::{query_config, query_custom_treasury_config, query_state},
     state::{read_config, store_config, store_state, Config},
 };
@@ -67,6 +67,7 @@ pub fn instantiate(
                 buffer: Uint128::zero(),
                 last_block: 0u64,
             },
+            payout_since_last_subsidy: Uint128::zero(),
         },
     )?;
 
@@ -76,13 +77,13 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::PaySubsidy {} => Ok(Response::default()),
         ExecuteMsg::Deposit {
             amount,
             max_price,
             depositor,
         } => Ok(Response::default()),
         ExecuteMsg::Redeem { depositor } => Ok(Response::default()),
+        ExecuteMsg::PaySubsidy {} => pay_subsidy(deps, info),
         _ => {
             assert_policy_privilege(deps.as_ref(), info)?;
             match msg {
