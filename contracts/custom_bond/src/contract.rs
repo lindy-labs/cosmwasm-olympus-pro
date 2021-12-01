@@ -5,8 +5,9 @@ use cosmwasm_std::{
     to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
 };
 
-use olympus_pro::custom_bond::{
-    Adjustment, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State, Terms,
+use olympus_pro::{
+    custom_bond::{Adjustment, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State, Terms},
+    querier::query_decimals,
 };
 
 use crate::{
@@ -25,6 +26,9 @@ pub fn instantiate(
     let custom_treasury_config =
         query_custom_treasury_config(&deps.querier, msg.olympus_treasury.clone())?;
 
+    let payout_decimals = query_decimals(&deps.querier, &custom_treasury_config.payout_token)?;
+    let principal_decimals = query_decimals(&deps.querier, &msg.principal_token)?;
+
     store_config(
         deps.storage,
         &Config {
@@ -37,6 +41,8 @@ pub fn instantiate(
             olympus_dao: deps.api.addr_canonicalize(&msg.olympus_dao)?,
             fee_tiers: msg.fee_tiers,
             fee_in_payout: msg.fee_in_payout,
+            payout_decimals,
+            principal_decimals,
         },
     )?;
 
@@ -57,11 +63,12 @@ pub fn instantiate(
                 addition: false,
                 rate: Uint128::zero(),
                 target: Uint128::zero(),
-                buffer: Uint128::zero(),
+                buffer: 0u64,
                 last_time: 0u64,
             },
             payout_since_last_subsidy: Uint128::zero(),
             total_principal_bonded: Uint128::zero(),
+            total_payout_given: Uint128::zero(),
         },
     )?;
 

@@ -288,75 +288,75 @@ fn test_send_payout_tokens_native_token_by_bond() {
     );
 }
 
-#[test]
-fn test_query_value_of_token_when_same_decimals() {
-    let mut deps = mock_dependencies(&[]);
+// #[test]
+// fn test_query_value_of_token_when_same_decimals() {
+//     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_treasury(&mut deps);
+//     instantiate_custom_treasury(&mut deps);
 
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::ValueOfToken {
-            principal_asset: Asset {
-                info: AssetInfo::NativeToken {
-                    denom: "utoken".to_string(),
-                },
-                amount: Uint128::from(100000000u128),
-            },
-        },
-    )
-    .unwrap();
-    let value_of_token: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(Uint128::from(100000000u128), value_of_token);
-}
+//     let res = query(
+//         deps.as_ref(),
+//         mock_env(),
+//         QueryMsg::ValueOfToken {
+//             principal_asset: Asset {
+//                 info: AssetInfo::NativeToken {
+//                     denom: "utoken".to_string(),
+//                 },
+//                 amount: Uint128::from(100000000u128),
+//             },
+//         },
+//     )
+//     .unwrap();
+//     let value_of_token: Uint128 = from_binary(&res).unwrap();
+//     assert_eq!(Uint128::from(100000000u128), value_of_token);
+// }
 
-#[test]
-fn test_query_value_of_token_when_less_decimals() {
-    let mut deps = mock_dependencies(&[]);
+// #[test]
+// fn test_query_value_of_token_when_less_decimals() {
+//     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_treasury(&mut deps);
+//     instantiate_custom_treasury(&mut deps);
 
-    deps.querier.with_token_mock_decimals(3);
+//     deps.querier.with_token_mock_decimals(3);
 
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::ValueOfToken {
-            principal_asset: Asset {
-                info: AssetInfo::Token {
-                    contract_addr: "utoken".to_string(),
-                },
-                amount: Uint128::from(100000000u128),
-            },
-        },
-    )
-    .unwrap();
-    let value_of_token: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(Uint128::from(100000000000u128), value_of_token);
-}
+//     let res = query(
+//         deps.as_ref(),
+//         mock_env(),
+//         QueryMsg::ValueOfToken {
+//             principal_asset: Asset {
+//                 info: AssetInfo::Token {
+//                     contract_addr: "utoken".to_string(),
+//                 },
+//                 amount: Uint128::from(100000000u128),
+//             },
+//         },
+//     )
+//     .unwrap();
+//     let value_of_token: Uint128 = from_binary(&res).unwrap();
+//     assert_eq!(Uint128::from(100000000000u128), value_of_token);
+// }
 
-#[test]
-fn test_query_value_of_token_when_more_decimals() {
-    let mut deps = mock_dependencies(&[]);
+// #[test]
+// fn test_query_value_of_token_when_more_decimals() {
+//     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_treasury(&mut deps);
+//     instantiate_custom_treasury(&mut deps);
 
-    deps.querier.with_token_mock_decimals(9);
+//     deps.querier.with_token_mock_decimals(9);
 
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::ValueOfToken {
-            principal_asset: Asset {
-                info: AssetInfo::Token {
-                    contract_addr: "utoken".to_string(),
-                },
-                amount: Uint128::from(100000000u128),
-            },
-        },
-    )
-    .unwrap();
-    let value_of_token: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(Uint128::from(100000u128), value_of_token);
-}
+//     let res = query(
+//         deps.as_ref(),
+//         mock_env(),
+//         QueryMsg::ValueOfToken {
+//             principal_asset: Asset {
+//                 info: AssetInfo::Token {
+//                     contract_addr: "utoken".to_string(),
+//                 },
+//                 amount: Uint128::from(100000000u128),
+//             },
+//         },
+//     )
+//     .unwrap();
+//     let value_of_token: Uint128 = from_binary(&res).unwrap();
+//     assert_eq!(Uint128::from(100000u128), value_of_token);
+// }

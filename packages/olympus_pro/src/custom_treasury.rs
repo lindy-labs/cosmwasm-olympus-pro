@@ -27,7 +27,6 @@ pub struct MigrateMsg {}
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
-    ValueOfToken { principal_asset: Asset },
     BondWhitelist { bond: String },
 }
 

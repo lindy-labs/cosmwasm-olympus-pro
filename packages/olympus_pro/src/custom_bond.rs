@@ -33,7 +33,7 @@ pub enum ExecuteMsg {
         addition: bool,
         increment: Uint128,
         target: Uint128,
-        buffer: Uint128,
+        buffer: u64,
     },
     UpdateConfig {
         policy: Option<String>,
@@ -95,7 +95,7 @@ pub struct Adjustment {
     pub addition: bool,
     pub rate: Uint128,
     pub target: Uint128,
-    pub buffer: Uint128,
+    pub buffer: u64,
     pub last_time: u64,
 }
 
@@ -108,6 +108,7 @@ pub struct State {
     pub adjustment: Adjustment,
     pub payout_since_last_subsidy: Uint128,
     pub total_principal_bonded: Uint128,
+    pub total_payout_given: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

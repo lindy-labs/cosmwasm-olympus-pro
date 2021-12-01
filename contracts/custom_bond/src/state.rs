@@ -21,6 +21,8 @@ pub struct Config {
     pub olympus_dao: CanonicalAddr,
     pub fee_tiers: Vec<FeeTier>,
     pub fee_in_payout: bool,
+    pub payout_decimals: u8,
+    pub principal_decimals: u8,
 }
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {

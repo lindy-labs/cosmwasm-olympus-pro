@@ -9,7 +9,7 @@ use cosmwasm_std::{
 use olympus_pro::custom_treasury::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use terraswap::asset::Asset;
 
-use crate::query::{query_bond_whitelist, query_config, query_value_of_token};
+use crate::query::{query_bond_whitelist, query_config};
 use crate::state::{read_bond_whitelist, read_config, store_bond_whitelist, store_config, Config};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -50,9 +50,6 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
-        QueryMsg::ValueOfToken { principal_asset } => {
-            to_binary(&query_value_of_token(deps, principal_asset)?)
-        }
         QueryMsg::BondWhitelist { bond } => to_binary(&query_bond_whitelist(deps, bond)?),
     }
 }
