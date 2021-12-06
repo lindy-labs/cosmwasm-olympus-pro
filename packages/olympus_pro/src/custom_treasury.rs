@@ -14,6 +14,7 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    UpdateConfig { policy: Option<String> },
     SendPayoutTokens { amount: Uint128 },
     Withdraw { asset: Asset, recipient: String },
     WhitelistBond { bond: String, whitelist: bool },
