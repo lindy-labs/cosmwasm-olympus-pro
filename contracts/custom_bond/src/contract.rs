@@ -11,7 +11,10 @@ use olympus_pro::{
 };
 
 use crate::{
-    execute::{initialize_bond, pay_subsidy, set_adjustment, set_bond_terms, update_config},
+    execute::{
+        deposit, initialize_bond, pay_subsidy, redeem, set_adjustment, set_bond_terms,
+        update_config,
+    },
     query::{query_config, query_custom_treasury_config, query_state},
     state::{read_config, store_config, store_state, Config},
 };
@@ -82,8 +85,8 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             amount,
             max_price,
             depositor,
-        } => Ok(Response::default()),
-        ExecuteMsg::Redeem { depositor } => Ok(Response::default()),
+        } => deposit(deps, env, info, amount, max_price, depositor),
+        ExecuteMsg::Redeem { user } => redeem(deps, env, user),
         ExecuteMsg::PaySubsidy {} => pay_subsidy(deps, info),
         _ => {
             assert_policy_privilege(deps.as_ref(), info)?;

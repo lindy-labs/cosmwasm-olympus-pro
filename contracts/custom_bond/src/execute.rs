@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    attr, to_binary, Attribute, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response, StdError,
-    StdResult, Uint128, WasmMsg,
+    attr, to_binary, Addr, Attribute, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response,
+    StdError, StdResult, Uint128, WasmMsg,
 };
 
 use olympus_pro::{
@@ -11,7 +11,10 @@ use olympus_pro::{
 use terraswap::asset::Asset;
 
 use crate::{
-    state::{read_config, read_state, store_config, store_state},
+    state::{
+        read_bond_info, read_config, read_state, remove_bond_info, store_bond_info, store_config,
+        store_state,
+    },
     utils::{adjust, decay_debt, get_max_payout, get_payout_for, get_true_bond_price},
 };
 
@@ -261,4 +264,45 @@ pub fn deposit(
     store_state(deps.storage, &state)?;
 
     Ok(Response::new().add_attributes(attrs).add_messages(messages))
+}
+
+pub fn redeem(deps: DepsMut, env: Env, user: String) -> StdResult<Response> {
+    let mut bond_info = read_bond_info(deps.storage, deps.api.addr_canonicalize(&user)?)?;
+
+    let time_since_last = env.block.time.seconds() - bond_info.last_time;
+
+    let mut payout = bond_info.payout
+        * Decimal::from_ratio(
+            Uint128::from(time_since_last as u128),
+            Uint128::from(bond_info.vesting as u128),
+        );
+    if payout > bond_info.payout {
+        payout = bond_info.payout;
+    }
+
+    if payout.is_zero() {
+        return Err(StdError::generic_err("nothing to redeem"));
+    }
+
+    bond_info.payout = bond_info.payout.checked_sub(payout)?;
+    if bond_info.payout.is_zero() {
+        remove_bond_info(deps.storage, deps.api.addr_canonicalize(&user)?);
+    } else {
+        bond_info.vesting = bond_info.vesting - time_since_last;
+        bond_info.last_time = env.block.time.seconds();
+        store_bond_info(deps.storage, &bond_info, deps.api.addr_canonicalize(&user)?)?;
+    }
+
+    let config = read_config(deps.storage)?;
+    let asset = Asset {
+        info: config.payout_token.to_normal(deps.api)?,
+        amount: payout,
+    };
+
+    Ok(Response::new()
+        .add_message(asset.into_msg(&deps.querier, Addr::unchecked(user))?)
+        .add_attributes(vec![
+            attr("action", "redeem"),
+            attr("amount", payout.to_string()),
+        ]))
 }

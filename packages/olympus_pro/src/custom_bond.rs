@@ -46,7 +46,7 @@ pub enum ExecuteMsg {
         depositor: String,
     },
     Redeem {
-        depositor: String,
+        user: String,
     },
 }
 
@@ -115,4 +115,12 @@ pub struct State {
 pub struct FeeTier {
     pub tier_ceiling: Uint128,
     pub fee_rate: Decimal,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct BondInfo {
+    pub payout: Uint128,
+    pub vesting: u64,
+    pub last_time: u64,
+    pub true_price_paid: Uint128,
 }
