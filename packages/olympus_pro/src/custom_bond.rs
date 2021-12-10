@@ -2,7 +2,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Decimal, Uint128};
-
+use cw20::Cw20ReceiveMsg;
 use terraswap::asset::AssetInfo;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -20,13 +20,14 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    Receive(Cw20ReceiveMsg),
     InitializeBond {
         terms: Terms,
         initial_debt: Uint128,
     },
     SetBondTerms {
         vesting_term: Option<u64>,
-        max_payout: Option<Uint128>,
+        max_payout: Option<Decimal>,
         max_debt: Option<Uint128>,
     },
     SetAdjustment {
@@ -41,12 +42,20 @@ pub enum ExecuteMsg {
     },
     PaySubsidy {},
     Deposit {
-        amount: Uint128,
         max_price: Uint128,
         depositor: String,
     },
     Redeem {
         user: String,
+    },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Cw20HookMsg {
+    Deposit {
+        max_price: Uint128,
+        depositor: String,
     },
 }
 
@@ -60,10 +69,8 @@ pub enum QueryMsg {
     Config {},
     State {},
     BondPrice {},
-    MaxPayout {},
     PayoutFor { value: Uint128 },
-    Debt {},
-    PayoutInfo { depositor: String },
+    CurrentDebt {},
     CurrentOlympusFee {},
     BondInfo { user: String },
 }
@@ -87,7 +94,7 @@ pub struct Terms {
     pub control_variable: Uint128,
     pub vesting_term: u64,
     pub minimum_price: Uint128,
-    pub max_payout: Uint128,
+    pub max_payout: Decimal,
     pub max_debt: Uint128,
 }
 
@@ -118,7 +125,7 @@ pub struct FeeTier {
     pub fee_rate: Decimal,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Default)]
 pub struct BondInfo {
     pub payout: Uint128,
     pub vesting: u64,

@@ -2,11 +2,15 @@
 use cosmwasm_std::entry_point;
 
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
+    from_binary, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    StdResult, Uint128,
 };
 
+use cw20::Cw20ReceiveMsg;
 use olympus_pro::{
-    custom_bond::{Adjustment, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State, Terms},
+    custom_bond::{
+        Adjustment, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State, Terms,
+    },
     querier::query_decimals,
 };
 
@@ -16,10 +20,11 @@ use crate::{
         update_config,
     },
     query::{
-        query_bond_info, query_config, query_current_olympus_fee, query_custom_treasury_config,
-        query_state,
+        query_bond_info, query_bond_price, query_config, query_current_debt,
+        query_current_olympus_fee, query_custom_treasury_config, query_payout_for, query_state,
     },
     state::{read_config, store_config, store_state, Config},
+    utils::get_received_native_fund,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -61,7 +66,7 @@ pub fn instantiate(
                 control_variable: Uint128::zero(),
                 vesting_term: 0u64,
                 minimum_price: Uint128::zero(),
-                max_payout: Uint128::zero(),
+                max_payout: Decimal::zero(),
                 max_debt: Uint128::zero(),
             },
             last_decay: 0u64,
@@ -84,11 +89,14 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
+        ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::Deposit {
-            amount,
             max_price,
             depositor,
-        } => deposit(deps, env, info, amount, max_price, depositor),
+        } => {
+            let amount = get_received_native_fund(deps.storage, info)?;
+            deposit(deps, env, amount, max_price, depositor)
+        }
         ExecuteMsg::Redeem { user } => redeem(deps, env, user),
         ExecuteMsg::PaySubsidy {} => pay_subsidy(deps, info),
         _ => {
@@ -120,15 +128,13 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
-        QueryMsg::BondPrice {} => to_binary(&"query_test"),
-        QueryMsg::MaxPayout {} => to_binary(&"query_test"),
-        QueryMsg::PayoutFor { .. } => to_binary(&"query_test"),
-        QueryMsg::Debt {} => to_binary(&"query_test"),
-        QueryMsg::PayoutInfo { .. } => to_binary(&"query_test"),
+        QueryMsg::BondPrice {} => to_binary(&query_bond_price(deps, env)?),
+        QueryMsg::PayoutFor { value } => to_binary(&query_payout_for(deps, env, value)?),
+        QueryMsg::CurrentDebt {} => to_binary(&query_current_debt(deps, env)?),
         QueryMsg::CurrentOlympusFee {} => to_binary(&query_current_olympus_fee(deps)?),
         QueryMsg::BondInfo { user } => to_binary(&query_bond_info(deps, user)?),
     }
@@ -137,6 +143,20 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
     Ok(Response::default())
+}
+
+pub fn receive_cw20(
+    deps: DepsMut,
+    env: Env,
+    _info: MessageInfo,
+    cw20_msg: Cw20ReceiveMsg,
+) -> StdResult<Response> {
+    match from_binary(&cw20_msg.msg)? {
+        Cw20HookMsg::Deposit {
+            max_price,
+            depositor,
+        } => deposit(deps, env, cw20_msg.amount, max_price, depositor),
+    }
 }
 
 fn assert_policy_privilege(deps: Deps, info: MessageInfo) -> StdResult<()> {

@@ -1,15 +1,12 @@
-use cosmwasm_std::{
-    attr, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
-};
+use cosmwasm_std::{Decimal, Deps, MessageInfo, StdError, StdResult, Storage, Uint128};
 
 use olympus_pro::{
-    custom_bond::{Adjustment, FeeTier, State, Terms},
-    querier::query_total_supply,
+    custom_bond::{FeeTier, State},
     utils::get_value_of_token,
 };
-use terraswap::asset::Asset;
+use terraswap::asset::{Asset, AssetInfoRaw};
 
-use crate::state::{read_config, read_state, store_config, store_state, Config};
+use crate::state::{read_config, Config};
 
 fn get_debt_decay(state: State, current_time: u64) -> Uint128 {
     let time_since_last = current_time - state.last_decay;
@@ -21,13 +18,13 @@ fn get_debt_decay(state: State, current_time: u64) -> Uint128 {
     }
 }
 
-fn get_current_debt(state: State, current_time: u64) -> Uint128 {
+pub fn get_current_debt(state: State, current_time: u64) -> Uint128 {
     state.total_debt - get_debt_decay(state, current_time)
 }
 
-pub fn decay_debt(env: Env, state: &mut State) {
-    state.total_debt = state.total_debt - get_debt_decay(state.clone(), env.block.time.seconds());
-    state.last_decay = env.block.time.seconds();
+pub fn decay_debt(state: &mut State, current_time: u64) {
+    state.total_debt = state.total_debt - get_debt_decay(state.clone(), current_time);
+    state.last_decay = current_time;
 }
 
 pub fn get_current_olympus_fee(config: Config, state: State) -> Decimal {
@@ -47,60 +44,26 @@ pub fn get_current_olympus_fee(config: Config, state: State) -> Decimal {
         .fee_rate
 }
 
-pub fn get_debt_ratio(
-    deps: Deps,
-    config: Config,
-    state: State,
-    current_time: u64,
-) -> StdResult<Uint128> {
+pub fn get_debt_ratio(state: State, payout_total_supply: Uint128, current_time: u64) -> Decimal {
     let current_debt = get_current_debt(state, current_time);
-    let payout_total_supply =
-        query_total_supply(&deps.querier, &config.payout_token.to_normal(deps.api)?)?;
 
-    Ok(current_debt
-        * Decimal::from_ratio(
-            Uint128::from(10u128.checked_pow(config.payout_decimals as u32).unwrap()),
-            payout_total_supply,
-        )
-        * Decimal::from_ratio(
-            Uint128::from(1u128),
-            Uint128::from(10u128.checked_pow(18u32).unwrap()),
-        ))
+    Decimal::from_ratio(current_debt, payout_total_supply)
 }
 
-pub fn get_bond_price(
-    deps: Deps,
-    config: Config,
-    state: State,
-    current_time: u64,
-) -> StdResult<Uint128> {
+pub fn get_bond_price(state: State, payout_total_supply: Uint128, current_time: u64) -> Uint128 {
     let price = state.terms.control_variable
-        * Decimal::from_ratio(
-            get_debt_ratio(deps, config.clone(), state.clone(), current_time)?,
-            Uint128::from(
-                10u128
-                    .checked_pow((config.payout_decimals - 5) as u32)
-                    .unwrap(),
-            ),
-        );
-    if price < state.terms.minimum_price {
-        Ok(price)
-    } else {
-        Ok(state.terms.minimum_price)
-    }
+        * get_debt_ratio(state.clone(), payout_total_supply, current_time);
+    std::cmp::min(price, state.terms.minimum_price)
 }
 
 pub fn get_true_bond_price(
-    deps: Deps,
     config: Config,
     state: State,
+    payout_total_supply: Uint128,
     current_time: u64,
-) -> StdResult<Uint128> {
-    let bond_price = get_bond_price(deps, config.clone(), state.clone(), current_time)?;
-    Ok(bond_price
-        + bond_price
-            * get_current_olympus_fee(config, state)
-            * Decimal::from_ratio(Uint128::from(1u128), Uint128::from(1000000u128)))
+) -> Uint128 {
+    let bond_price = get_bond_price(state.clone(), payout_total_supply, current_time);
+    bond_price + (bond_price * get_current_olympus_fee(config, state))
 }
 
 pub fn get_payout_for(
@@ -108,25 +71,23 @@ pub fn get_payout_for(
     config: Config,
     state: State,
     value: Uint128,
+    payout_total_supply: Uint128,
     current_time: u64,
 ) -> StdResult<(Uint128, Uint128)> {
     let current_olympus_fee = get_current_olympus_fee(config.clone(), state.clone());
+
+    let bond_price = get_bond_price(state.clone(), payout_total_supply, current_time);
 
     if config.fee_in_payout {
         let total = value
             * Decimal::from_ratio(
                 Uint128::from(1u128),
-                get_bond_price(deps, config.clone(), state.clone(), current_time)?
-                    * Uint128::from(100000000000u128),
+                bond_price * Uint128::from(100000000000u128),
             );
-        let fee = total
-            * current_olympus_fee
-            * Decimal::from_ratio(Uint128::from(1u128), Uint128::from(1000000u128));
+        let fee = total * current_olympus_fee;
         Ok((total.checked_sub(fee)?, fee))
     } else {
-        let fee = value
-            * current_olympus_fee
-            * Decimal::from_ratio(Uint128::from(1u128), Uint128::from(1000000u128));
+        let fee = value * current_olympus_fee;
         let payout = get_value_of_token(
             Asset {
                 info: config.principal_token.to_normal(deps.api)?,
@@ -136,21 +97,14 @@ pub fn get_payout_for(
             config.principal_decimals,
         ) * Decimal::from_ratio(
             Uint128::from(1u128),
-            get_bond_price(deps, config.clone(), state.clone(), current_time)?
-                * Uint128::from(100000000000u128),
+            bond_price * Uint128::from(100000000000u128),
         );
         Ok((payout, fee))
     }
 }
 
-pub fn get_max_payout(deps: Deps, config: Config, state: State) -> StdResult<Uint128> {
-    let payout_total_supply =
-        query_total_supply(&deps.querier, &config.payout_token.to_normal(deps.api)?)?;
-
-    Ok(
-        payout_total_supply
-            * Decimal::from_ratio(state.terms.max_payout, Uint128::from(100000u128)),
-    )
+pub fn get_max_payout(state: State, payout_total_supply: Uint128) -> StdResult<Uint128> {
+    Ok(payout_total_supply * state.terms.max_payout)
 }
 
 pub fn adjust(state: &mut State, current_time: u64) -> StdResult<(bool, Uint128)> {
@@ -175,5 +129,24 @@ pub fn adjust(state: &mut State, current_time: u64) -> StdResult<(bool, Uint128)
         Ok((true, inital))
     } else {
         Ok((false, Uint128::zero()))
+    }
+}
+
+pub fn get_received_native_fund(storage: &dyn Storage, info: MessageInfo) -> StdResult<Uint128> {
+    let config = read_config(storage)?;
+
+    if info.funds.len() != 1u64 as usize {
+        return Err(StdError::generic_err("invalid denom received"));
+    }
+    if let AssetInfoRaw::NativeToken { denom } = config.principal_token {
+        let amount: Uint128 = info
+            .funds
+            .iter()
+            .find(|c| c.denom == *denom)
+            .map(|c| Uint128::from(c.amount))
+            .unwrap_or_else(Uint128::zero);
+        Ok(amount)
+    } else {
+        Err(StdError::generic_err("not support cw20 token"))
     }
 }

@@ -6,6 +6,7 @@ use cosmwasm_std::{
 use olympus_pro::{
     custom_bond::{Adjustment, Terms},
     custom_treasury::ExecuteMsg as CustomTreasuryExecuteMsg,
+    querier::query_total_supply,
     utils::get_value_of_token,
 };
 use terraswap::asset::Asset;
@@ -62,7 +63,7 @@ pub fn initialize_bond(
 pub fn set_bond_terms(
     deps: DepsMut,
     vesting_term: Option<u64>,
-    max_payout: Option<Uint128>,
+    max_payout: Option<Decimal>,
     max_debt: Option<Uint128>,
 ) -> StdResult<Response> {
     let mut state = read_state(deps.storage)?;
@@ -77,7 +78,7 @@ pub fn set_bond_terms(
     }
 
     if let Some(max_payout) = max_payout {
-        if max_payout < Uint128::from(1000u128) {
+        if max_payout >= Decimal::percent(1) {
             return Err(StdError::generic_err("payout cannot be above 1 percent"));
         }
         state.terms.max_payout = max_payout;
@@ -138,7 +139,6 @@ pub fn pay_subsidy(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
 pub fn deposit(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
     amount: Uint128,
     max_price: Uint128,
     depositor: String,
@@ -148,10 +148,17 @@ pub fn deposit(
 
     let current_time = env.block.time.seconds();
 
-    decay_debt(env.clone(), &mut state);
+    decay_debt(&mut state, current_time);
 
-    let native_price =
-        get_true_bond_price(deps.as_ref(), config.clone(), state.clone(), current_time)?;
+    let payout_total_supply =
+        query_total_supply(&deps.querier, &config.payout_token.to_normal(deps.api)?)?;
+
+    let native_price = get_true_bond_price(
+        config.clone(),
+        state.clone(),
+        payout_total_supply,
+        current_time,
+    );
     if max_price < native_price {
         return Err(StdError::generic_err("slippage limit: more than max price"));
     }
@@ -173,6 +180,7 @@ pub fn deposit(
             config.clone(),
             state.clone(),
             value,
+            payout_total_supply,
             current_time,
         )?
     } else {
@@ -181,17 +189,10 @@ pub fn deposit(
             config.clone(),
             state.clone(),
             amount,
+            payout_total_supply,
             current_time,
         )?
     };
-
-    let mut payout_from_treasury = payout;
-
-    if config.fee_in_payout {
-        payout_from_treasury += fee;
-    } else {
-        amount_without_fee = amount_without_fee.checked_sub(fee)?;
-    }
 
     if payout
         < Uint128::from(
@@ -201,7 +202,7 @@ pub fn deposit(
         )
     {
         return Err(StdError::generic_err("bond too small"));
-    } else if payout > get_max_payout(deps.as_ref(), config.clone(), state.clone())? {
+    } else if payout > get_max_payout(state.clone(), payout_total_supply)? {
         return Err(StdError::generic_err("bond too large"));
     }
 
@@ -209,6 +210,26 @@ pub fn deposit(
     if state.total_debt > state.terms.max_debt {
         return Err(StdError::generic_err("max capacity reached"));
     }
+
+    let mut payout_from_treasury = payout;
+
+    if config.fee_in_payout {
+        payout_from_treasury += fee;
+    } else {
+        amount_without_fee = amount_without_fee.checked_sub(fee)?;
+    }
+
+    let mut bond_info =
+        read_bond_info(deps.storage, deps.api.addr_canonicalize(&depositor)?).unwrap_or_default();
+    bond_info.payout += payout;
+    bond_info.vesting = state.terms.vesting_term;
+    bond_info.last_time = current_time;
+    bond_info.true_price_paid = native_price;
+    store_bond_info(
+        deps.storage,
+        &bond_info,
+        deps.api.addr_canonicalize(&depositor)?,
+    )?;
 
     state.total_principal_bonded += amount_without_fee;
     state.total_payout_given += payout;
@@ -223,19 +244,20 @@ pub fn deposit(
         })
         .unwrap(),
     }));
+
     if !fee.is_zero() {
-        if config.fee_in_payout {
-            let asset = Asset {
-                info: config.payout_token.to_normal(deps.api)?,
-                amount: fee,
-            };
-            messages.push(asset.into_msg(
-                &deps.querier,
-                deps.api.addr_humanize(&config.olympus_treasury)?,
-            )?)
-        } else {
-            // TODO safe transfer from
-        }
+        let asset = Asset {
+            info: if config.fee_in_payout {
+                config.payout_token.to_normal(deps.api)?
+            } else {
+                config.principal_token.to_normal(deps.api)?
+            },
+            amount: fee,
+        };
+        messages.push(asset.into_msg(
+            &deps.querier,
+            deps.api.addr_humanize(&config.olympus_treasury)?,
+        )?)
     }
 
     let mut attrs: Vec<Attribute> = vec![
@@ -252,7 +274,7 @@ pub fn deposit(
 
     let (adjusted, initial_value) = adjust(&mut state, current_time)?;
     if adjusted {
-        attrs.push(attr("action", "control_variable_adjusted"));
+        attrs.push(attr("action", "adjust"));
         attrs.push(attr("initial", initial_value.to_string()));
         attrs.push(attr(
             "control_variable",
