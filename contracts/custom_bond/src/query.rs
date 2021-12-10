@@ -1,13 +1,16 @@
-use cosmwasm_std::{to_binary, Deps, QuerierWrapper, QueryRequest, StdResult, WasmQuery};
+use cosmwasm_std::{to_binary, Decimal, Deps, QuerierWrapper, QueryRequest, StdResult, WasmQuery};
 
 use olympus_pro::{
-    custom_bond::{ConfigResponse, State},
+    custom_bond::{BondInfo, ConfigResponse, State},
     custom_treasury::{
         ConfigResponse as CustomTreasuryConfigResponse, QueryMsg as CustomTreasuryQueryMsg,
     },
 };
 
-use crate::state::{read_config, read_state};
+use crate::{
+    state::{read_bond_info, read_config, read_state},
+    utils::get_current_olympus_fee,
+};
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = read_config(deps.storage)?;
@@ -47,4 +50,15 @@ pub fn query_custom_treasury_config(
         }))?;
 
     Ok(res)
+}
+
+pub fn query_bond_info(deps: Deps, user: String) -> StdResult<BondInfo> {
+    let bond_info = read_bond_info(deps.storage, deps.api.addr_canonicalize(&user)?)?;
+    Ok(bond_info)
+}
+
+pub fn query_current_olympus_fee(deps: Deps) -> StdResult<Decimal> {
+    let config = read_config(deps.storage)?;
+    let state = read_state(deps.storage)?;
+    Ok(get_current_olympus_fee(config, state))
 }

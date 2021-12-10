@@ -15,7 +15,10 @@ use crate::{
         deposit, initialize_bond, pay_subsidy, redeem, set_adjustment, set_bond_terms,
         update_config,
     },
-    query::{query_config, query_custom_treasury_config, query_state},
+    query::{
+        query_bond_info, query_config, query_current_olympus_fee, query_custom_treasury_config,
+        query_state,
+    },
     state::{read_config, store_config, store_state, Config},
 };
 
@@ -126,7 +129,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::PayoutFor { .. } => to_binary(&"query_test"),
         QueryMsg::Debt {} => to_binary(&"query_test"),
         QueryMsg::PayoutInfo { .. } => to_binary(&"query_test"),
-        QueryMsg::CurrentOlympusFee {} => to_binary(&"query_test"),
+        QueryMsg::CurrentOlympusFee {} => to_binary(&query_current_olympus_fee(deps)?),
+        QueryMsg::BondInfo { user } => to_binary(&query_bond_info(deps, user)?),
     }
 }
 

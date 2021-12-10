@@ -65,6 +65,7 @@ pub enum QueryMsg {
     Debt {},
     PayoutInfo { depositor: String },
     CurrentOlympusFee {},
+    BondInfo { user: String },
 }
 
 // We define a custom struct for each query response
