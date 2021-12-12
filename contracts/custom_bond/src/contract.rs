@@ -10,6 +10,7 @@ use olympus_pro::{
     custom_bond::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State},
     querier::{query_decimals, query_token_decimals},
 };
+use terraswap::asset::AssetInfoRaw;
 
 use crate::{
     execute::{
@@ -124,14 +125,22 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Respons
 pub fn receive_cw20(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     cw20_msg: Cw20ReceiveMsg,
 ) -> StdResult<Response> {
     match from_binary(&cw20_msg.msg)? {
         Cw20HookMsg::Deposit {
             max_price,
             depositor,
-        } => deposit(deps, env, cw20_msg.amount, max_price, depositor),
+        } => {
+            let config = read_config(deps.storage)?;
+            if let AssetInfoRaw::Token { contract_addr } = config.principal_token {
+                if deps.api.addr_humanize(&contract_addr)? == info.sender.clone() {
+                    return deposit(deps, env, cw20_msg.amount, max_price, depositor);
+                }
+            }
+            Err(StdError::generic_err("invalid cw20 token"))
+        }
     }
 }
 

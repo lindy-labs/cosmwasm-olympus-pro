@@ -171,6 +171,10 @@ pub fn deposit(
     max_price: Uint128,
     depositor: String,
 ) -> StdResult<Response> {
+    if amount.is_zero() {
+        return Err(StdError::generic_err("amount is zero"));
+    }
+
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
 

@@ -53,6 +53,39 @@ pub fn instantiate_custom_bond(
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 }
 
+pub fn instantiate_custom_bond_with_principal_token(
+    deps: &mut OwnedDeps<MockStorage, MockApi, WasmMockQuerier>,
+    payout_decimals: Option<u8>,
+    principal_token: AssetInfo,
+) {
+    let payout_decimals = if let Some(decimals) = payout_decimals {
+        decimals
+    } else {
+        6u8
+    };
+    deps.querier
+        .with_token_info(&[], &[(&String::from("payout_token"), &payout_decimals)]);
+    deps.querier.with_custom_treasury(
+        String::from("custom_treasury"),
+        String::from("payout_token"),
+    );
+
+    let msg = InstantiateMsg {
+        custom_treasury: String::from("custom_treasury"),
+        principal_token,
+        olympus_treasury: String::from("olympus_treasury"),
+        subsidy_router: String::from("subsidy_router"),
+        initial_owner: String::from("policy"),
+        olympus_dao: String::from("olympus_dao"),
+        fee_tiers: vec![],
+        fee_in_payout: true,
+    };
+
+    let info = mock_info("policy", &[]);
+
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+}
+
 pub fn initialize_bond(deps: &mut OwnedDeps<MockStorage, MockApi, WasmMockQuerier>, env: Env) {
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::InitializeBond {
