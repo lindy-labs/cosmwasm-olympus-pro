@@ -38,6 +38,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> StdResult<Response> {
     match msg {
+        ExecuteMsg::UpdateConfig { policy } => update_config(deps, info, policy),
         ExecuteMsg::SendPayoutTokens { amount } => send_payout_token(deps, info, amount),
         ExecuteMsg::Withdraw { asset, recipient } => withdraw(deps, info, asset, recipient),
         ExecuteMsg::WhitelistBond { bond, whitelist } => {
@@ -136,4 +137,18 @@ fn whitelist_bond(
         attr("bond", bond),
         attr("whitelist", whitelist.to_string()),
     ]))
+}
+
+fn update_config(deps: DepsMut, info: MessageInfo, policy: Option<String>) -> StdResult<Response> {
+    assert_policy_privilege(deps.as_ref(), info)?;
+
+    let mut config = read_config(deps.storage)?;
+
+    if let Some(policy) = policy {
+        config.policy = deps.api.addr_canonicalize(&policy)?;
+    }
+
+    store_config(deps.storage, &config)?;
+
+    Ok(Response::new().add_attributes(vec![attr("action", "update_config")]))
 }
