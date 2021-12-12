@@ -2,22 +2,19 @@
 use cosmwasm_std::entry_point;
 
 use cosmwasm_std::{
-    from_binary, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdError,
-    StdResult, Uint128,
+    from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
 
 use cw20::Cw20ReceiveMsg;
 use olympus_pro::{
-    custom_bond::{
-        Adjustment, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State, Terms,
-    },
+    custom_bond::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State},
     querier::{query_decimals, query_token_decimals},
 };
 
 use crate::{
     execute::{
         deposit, initialize_bond, pay_subsidy, redeem, set_adjustment, set_bond_terms,
-        update_config,
+        update_olympus_treasury, update_policy,
     },
     query::{
         query_bond_info, query_bond_price, query_config, query_current_debt,
@@ -35,7 +32,7 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
     let custom_treasury_config =
-        query_custom_treasury_config(&deps.querier, msg.olympus_treasury.clone())?;
+        query_custom_treasury_config(&deps.querier, msg.custom_treasury.clone())?;
 
     let payout_decimals =
         query_token_decimals(&deps.querier, custom_treasury_config.payout_token.clone())?;
@@ -60,31 +57,7 @@ pub fn instantiate(
         },
     )?;
 
-    store_state(
-        deps.storage,
-        &State {
-            current_debt: Uint128::zero(),
-            total_debt: Uint128::zero(),
-            terms: Terms {
-                control_variable: Uint128::zero(),
-                vesting_term: 0u64,
-                minimum_price: Uint128::zero(),
-                max_payout: Decimal::zero(),
-                max_debt: Uint128::zero(),
-            },
-            last_decay: 0u64,
-            adjustment: Adjustment {
-                addition: false,
-                rate: Uint128::zero(),
-                target: Uint128::zero(),
-                buffer: 0u64,
-                last_time: 0u64,
-            },
-            payout_since_last_subsidy: Uint128::zero(),
-            total_principal_bonded: Uint128::zero(),
-            total_payout_given: Uint128::zero(),
-        },
-    )?;
+    store_state(deps.storage, &State::default())?;
 
     Ok(Response::default())
 }
@@ -102,13 +75,13 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         }
         ExecuteMsg::Redeem { user } => redeem(deps, env, user),
         ExecuteMsg::PaySubsidy {} => pay_subsidy(deps, info),
+        ExecuteMsg::UpdateOlympusTreasury { olympus_treasury } => {
+            update_olympus_treasury(deps, info, olympus_treasury)
+        }
         _ => {
             assert_policy_privilege(deps.as_ref(), info)?;
             match msg {
-                ExecuteMsg::UpdateConfig {
-                    policy,
-                    olympus_treasury,
-                } => update_config(deps, policy, olympus_treasury),
+                ExecuteMsg::UpdatePolicy { policy } => update_policy(deps, policy),
                 ExecuteMsg::InitializeBond {
                     terms,
                     initial_debt,

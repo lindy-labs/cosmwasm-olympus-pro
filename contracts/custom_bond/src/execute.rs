@@ -21,24 +21,38 @@ use crate::{
     },
 };
 
-pub fn update_config(
-    deps: DepsMut,
-    policy: Option<String>,
-    olympus_treasury: Option<String>,
-) -> StdResult<Response> {
+pub fn update_policy(deps: DepsMut, policy: String) -> StdResult<Response> {
     let mut config = read_config(deps.storage)?;
 
-    if let Some(policy) = policy {
-        config.policy = deps.api.addr_canonicalize(&policy)?;
-    }
-
-    if let Some(olympus_treasury) = olympus_treasury {
-        config.olympus_treasury = deps.api.addr_canonicalize(&olympus_treasury)?;
-    }
+    config.policy = deps.api.addr_canonicalize(&policy)?;
 
     store_config(deps.storage, &config)?;
 
-    Ok(Response::new().add_attributes(vec![attr("action", "update_config")]))
+    Ok(Response::new().add_attributes(vec![
+        attr("action", "update_policy"),
+        attr("policy", policy),
+    ]))
+}
+
+pub fn update_olympus_treasury(
+    deps: DepsMut,
+    info: MessageInfo,
+    olympus_treasury: String,
+) -> StdResult<Response> {
+    let mut config = read_config(deps.storage)?;
+
+    if config.olympus_dao != deps.api.addr_canonicalize(info.sender.as_str())? {
+        return Err(StdError::generic_err("unauthorized"));
+    }
+
+    config.olympus_treasury = deps.api.addr_canonicalize(&olympus_treasury)?;
+
+    store_config(deps.storage, &config)?;
+
+    Ok(Response::new().add_attributes(vec![
+        attr("action", "update_olympus_treasury"),
+        attr("olympus_treasury", olympus_treasury),
+    ]))
 }
 
 pub fn initialize_bond(
