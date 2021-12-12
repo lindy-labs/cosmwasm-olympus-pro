@@ -443,3 +443,78 @@ fn test_send_bond_terms_by_policy_set_max_debt() {
     let state: State = from_binary(&res).unwrap();
     assert_eq!(Uint128::from(10000u128), state.terms.max_debt);
 }
+
+#[test]
+fn test_set_adjustment_fails_if_unauthorized() {
+    let mut deps = mock_dependencies(&[]);
+
+    instantiate_custom_bond(&mut deps, None, None);
+
+    initialize_bond(&mut deps, mock_env());
+
+    let info = mock_info("addr", &[]);
+    let msg = ExecuteMsg::SetAdjustment {
+        addition: true,
+        increment: Uint128::from(10u128),
+        target: Uint128::from(100000000u128),
+        buffer: 86400u64,
+    };
+
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    assert_eq!(res, StdError::generic_err("unauthorized"));
+}
+
+#[test]
+fn test_set_adjustment_by_policy() {
+    let mut deps = mock_dependencies(&[]);
+
+    instantiate_custom_bond(&mut deps, None, None);
+
+    initialize_bond(&mut deps, mock_env());
+
+    let info = mock_info("policy", &[]);
+    let msg = ExecuteMsg::SetAdjustment {
+        addition: true,
+        increment: Uint128::from(10u128),
+        target: Uint128::from(100000000u128),
+        buffer: 86400u64,
+    };
+
+    let env = mock_env();
+    let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+    assert_eq!(res.attributes, vec![attr("action", "set_adjustment"),]);
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: State = from_binary(&res).unwrap();
+    assert_eq!(
+        Adjustment {
+            addition: true,
+            rate: Uint128::from(10u128),
+            target: Uint128::from(100000000u128),
+            buffer: 86400u64,
+            last_time: env.block.time.seconds()
+        },
+        state.adjustment
+    );
+}
+
+#[test]
+fn test_set_adjustment_fails_if_increment_is_greater_than_30percent_of_control_variable() {
+    let mut deps = mock_dependencies(&[]);
+
+    instantiate_custom_bond(&mut deps, None, None);
+
+    initialize_bond(&mut deps, mock_env());
+
+    let info = mock_info("policy", &[]);
+    let msg = ExecuteMsg::SetAdjustment {
+        addition: true,
+        increment: Uint128::from(31u128),
+        target: Uint128::from(100000000u128),
+        buffer: 86400u64,
+    };
+
+    let env = mock_env();
+    let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
+    assert_eq!(res, StdError::generic_err("increment too large"));
+}
