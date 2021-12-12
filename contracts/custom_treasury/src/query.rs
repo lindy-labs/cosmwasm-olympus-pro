@@ -1,7 +1,6 @@
-use cosmwasm_std::{Decimal, Deps, StdResult, Uint128};
+use cosmwasm_std::{Deps, StdResult};
 
-use olympus_pro::{custom_treasury::ConfigResponse, querier::query_decimals};
-use terraswap::asset::Asset;
+use olympus_pro::custom_treasury::ConfigResponse;
 
 use crate::state::{read_bond_whitelist, read_config};
 
