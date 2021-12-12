@@ -36,9 +36,11 @@ pub enum ExecuteMsg {
         target: Uint128,
         buffer: u64,
     },
-    UpdateConfig {
-        policy: Option<String>,
-        olympus_treasury: Option<String>,
+    UpdatePolicy {
+        policy: String,
+    },
+    UpdateOlympusTreasury {
+        olympus_treasury: String,
     },
     PaySubsidy {},
     Deposit {
@@ -89,7 +91,7 @@ pub struct ConfigResponse {
     pub fee_in_payout: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Default)]
 pub struct Terms {
     pub control_variable: Uint128,
     pub vesting_term: u64,
@@ -98,7 +100,7 @@ pub struct Terms {
     pub max_debt: Uint128,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Default)]
 pub struct Adjustment {
     pub addition: bool,
     pub rate: Uint128,
@@ -107,9 +109,8 @@ pub struct Adjustment {
     pub last_time: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Default)]
 pub struct State {
-    pub current_debt: Uint128,
     pub total_debt: Uint128,
     pub terms: Terms,
     pub last_decay: u64,

@@ -17,7 +17,8 @@ use crate::{
         store_state,
     },
     utils::{
-        adjust, decay_debt, get_debt_ratio, get_max_payout, get_payout_for, get_true_bond_price,
+        adjust, decay_debt, get_current_debt, get_debt_ratio, get_max_payout, get_payout_for,
+        get_true_bond_price,
     },
 };
 
@@ -63,8 +64,19 @@ pub fn initialize_bond(
 ) -> StdResult<Response> {
     let mut state = read_state(deps.storage)?;
 
-    if !state.current_debt.is_zero() {
+    let current_time = env.block.time.seconds();
+
+    if !get_current_debt(state.clone(), current_time).is_zero() {
         return Err(StdError::generic_err("debt must be 0 for initialization"));
+    }
+
+    if terms.vesting_term < 129600 {
+        return Err(StdError::generic_err(
+            "vesting must be longer than 36 hours",
+        ));
+    }
+    if terms.max_payout >= Decimal::percent(1) {
+        return Err(StdError::generic_err("payout cannot be above 1 percent"));
     }
 
     state.terms = terms;
