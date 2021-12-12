@@ -16,7 +16,9 @@ use crate::{
         read_bond_info, read_config, read_state, remove_bond_info, store_bond_info, store_config,
         store_state,
     },
-    utils::{adjust, decay_debt, get_max_payout, get_payout_for, get_true_bond_price},
+    utils::{
+        adjust, decay_debt, get_debt_ratio, get_max_payout, get_payout_for, get_true_bond_price,
+    },
 };
 
 pub fn update_config(
@@ -174,8 +176,6 @@ pub fn deposit(
         config.principal_decimals,
     );
 
-    let mut amount_without_fee = amount;
-
     let (payout, fee) = if config.fee_in_payout {
         get_payout_for(
             deps.as_ref(),
@@ -214,6 +214,7 @@ pub fn deposit(
     }
 
     let mut payout_from_treasury = payout;
+    let mut amount_without_fee = amount;
 
     if config.fee_in_payout {
         payout_from_treasury += fee;
@@ -264,6 +265,14 @@ pub fn deposit(
         )?)
     }
 
+    let mut bond_price = state.terms.control_variable
+        * get_debt_ratio(state.clone(), payout_total_supply, current_time);
+    if bond_price < state.terms.minimum_price {
+        bond_price = state.terms.minimum_price;
+    } else {
+        state.terms.minimum_price = Uint128::zero();
+    }
+
     let mut attrs: Vec<Attribute> = vec![
         attr("action", "deposit"),
         attr("amount", amount.to_string()),
@@ -272,8 +281,11 @@ pub fn deposit(
             "expires",
             (current_time + state.terms.vesting_term).to_string(),
         ),
-        // attr("bond_price", "bond_price"),
-        // attr("debt_ratio", "debt_ratio"),
+        attr("bond_price", bond_price),
+        attr(
+            "debt_ratio",
+            get_debt_ratio(state.clone(), payout_total_supply, current_time).to_string(),
+        ),
     ];
 
     let (adjusted, initial_value) = adjust(&mut state, current_time)?;

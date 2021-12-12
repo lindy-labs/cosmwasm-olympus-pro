@@ -79,11 +79,7 @@ pub fn get_payout_for(
     let bond_price = get_bond_price(state.clone(), payout_total_supply, current_time);
 
     if config.fee_in_payout {
-        let total = value
-            * Decimal::from_ratio(
-                Uint128::from(1u128),
-                bond_price * Uint128::from(100000000000u128),
-            );
+        let total = value * Decimal::from_ratio(Uint128::from(1u128), bond_price);
         let fee = total * current_olympus_fee;
         Ok((total.checked_sub(fee)?, fee))
     } else {
@@ -95,10 +91,7 @@ pub fn get_payout_for(
             },
             config.payout_decimals,
             config.principal_decimals,
-        ) * Decimal::from_ratio(
-            Uint128::from(1u128),
-            bond_price * Uint128::from(100000000000u128),
-        );
+        ) * Decimal::from_ratio(Uint128::from(1u128), bond_price);
         Ok((payout, fee))
     }
 }
