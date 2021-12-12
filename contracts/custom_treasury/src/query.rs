@@ -8,7 +8,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = read_config(deps.storage)?;
 
     let resp = ConfigResponse {
-        payout_token: config.payout_token.to_normal(deps.api)?,
+        payout_token: deps.api.addr_humanize(&config.payout_token)?.to_string(),
         policy: deps.api.addr_humanize(&config.policy)?.to_string(),
     };
 

@@ -79,7 +79,7 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub custom_treasury: String,
-    pub payout_token: AssetInfo,
+    pub payout_token: String,
     pub principal_token: AssetInfo,
     pub olympus_treasury: String,
     pub subsidy_router: String,

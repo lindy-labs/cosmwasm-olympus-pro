@@ -282,9 +282,7 @@ fn test_create_bond_and_treasury_fails_if_unauthorized() {
 
     let info = mock_info("addr", &[]);
     let msg = ExecuteMsg::CreateBondAndTreasury {
-        payout_token: AssetInfo::NativeToken {
-            denom: String::from("payout"),
-        },
+        payout_token: String::from("payout"),
         principal_token: AssetInfo::NativeToken {
             denom: String::from("principal"),
         },
@@ -314,9 +312,7 @@ fn test_create_bond_and_treasury_by_policy() {
 
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::CreateBondAndTreasury {
-        payout_token: AssetInfo::NativeToken {
-            denom: String::from("payout"),
-        },
+        payout_token: String::from("payout"),
         principal_token: AssetInfo::NativeToken {
             denom: String::from("principal"),
         },
@@ -347,9 +343,7 @@ fn test_create_bond_and_treasury_by_policy() {
                 admin: Some(String::from(MOCK_CONTRACT_ADDR)),
                 label: "OlympusPro Custom Treasury".to_string(),
                 msg: to_binary(&CustomTreasuryInstantiateMsg {
-                    payout_token: AssetInfo::NativeToken {
-                        denom: String::from("payout"),
-                    },
+                    payout_token: String::from("payout"),
                     initial_owner: String::from("initial_owner"),
                 })
                 .unwrap(),
@@ -368,9 +362,7 @@ fn test_create_bond_and_treasury_reqeust_create_bond_on_first_reply() {
 
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::CreateBondAndTreasury {
-        payout_token: AssetInfo::NativeToken {
-            denom: String::from("payout"),
-        },
+        payout_token: String::from("payout"),
         principal_token: AssetInfo::NativeToken {
             denom: String::from("principal"),
         },
@@ -451,9 +443,7 @@ fn test_create_bond_and_treasury_register_bond_on_second_reply() {
 
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::CreateBondAndTreasury {
-        payout_token: AssetInfo::NativeToken {
-            denom: String::from("payout"),
-        },
+        payout_token: String::from("payout"),
         principal_token: AssetInfo::NativeToken {
             denom: String::from("principal"),
         },

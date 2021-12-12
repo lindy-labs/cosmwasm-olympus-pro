@@ -11,7 +11,7 @@ use olympus_pro::{
     custom_bond::{
         Adjustment, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, State, Terms,
     },
-    querier::query_decimals,
+    querier::{query_decimals, query_token_decimals},
 };
 
 use crate::{
@@ -37,14 +37,17 @@ pub fn instantiate(
     let custom_treasury_config =
         query_custom_treasury_config(&deps.querier, msg.olympus_treasury.clone())?;
 
-    let payout_decimals = query_decimals(&deps.querier, &custom_treasury_config.payout_token)?;
+    let payout_decimals =
+        query_token_decimals(&deps.querier, custom_treasury_config.payout_token.clone())?;
     let principal_decimals = query_decimals(&deps.querier, &msg.principal_token)?;
 
     store_config(
         deps.storage,
         &Config {
             custom_treasury: deps.api.addr_canonicalize(&msg.custom_treasury)?,
-            payout_token: custom_treasury_config.payout_token.to_raw(deps.api)?,
+            payout_token: deps
+                .api
+                .addr_canonicalize(&custom_treasury_config.payout_token)?,
             principal_token: msg.principal_token.to_raw(deps.api)?,
             olympus_treasury: deps.api.addr_canonicalize(&msg.olympus_treasury)?,
             subsidy_router: deps.api.addr_canonicalize(&msg.subsidy_router)?,

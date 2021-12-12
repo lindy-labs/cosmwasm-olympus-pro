@@ -23,7 +23,7 @@ pub enum ExecuteMsg {
         policy: Option<String>,
     },
     CreateBondAndTreasury {
-        payout_token: AssetInfo,
+        payout_token: String,
         principal_token: AssetInfo,
         initial_owner: String,
         fee_tiers: Vec<FeeTier>,

@@ -14,7 +14,7 @@ const PREFIX_KEY_BOND_INFO: &[u8] = b"prefix_bond_info";
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub custom_treasury: CanonicalAddr,
-    pub payout_token: AssetInfoRaw,
+    pub payout_token: CanonicalAddr,
     pub principal_token: AssetInfoRaw,
     pub olympus_treasury: CanonicalAddr,
     pub subsidy_router: CanonicalAddr,

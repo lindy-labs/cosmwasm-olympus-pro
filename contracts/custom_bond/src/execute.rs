@@ -6,10 +6,10 @@ use cosmwasm_std::{
 use olympus_pro::{
     custom_bond::{Adjustment, Terms},
     custom_treasury::ExecuteMsg as CustomTreasuryExecuteMsg,
-    querier::query_total_supply,
+    querier::query_token_supply,
     utils::get_value_of_token,
 };
-use terraswap::asset::Asset;
+use terraswap::asset::{Asset, AssetInfo};
 
 use crate::{
     state::{
@@ -150,8 +150,10 @@ pub fn deposit(
 
     decay_debt(&mut state, current_time);
 
-    let payout_total_supply =
-        query_total_supply(&deps.querier, &config.payout_token.to_normal(deps.api)?)?;
+    let payout_total_supply = query_token_supply(
+        &deps.querier,
+        deps.api.addr_humanize(&config.payout_token)?.to_string(),
+    )?;
 
     let native_price = get_true_bond_price(
         config.clone(),
@@ -248,7 +250,9 @@ pub fn deposit(
     if !fee.is_zero() {
         let asset = Asset {
             info: if config.fee_in_payout {
-                config.payout_token.to_normal(deps.api)?
+                AssetInfo::Token {
+                    contract_addr: deps.api.addr_humanize(&config.payout_token)?.to_string(),
+                }
             } else {
                 config.principal_token.to_normal(deps.api)?
             },
@@ -317,7 +321,9 @@ pub fn redeem(deps: DepsMut, env: Env, user: String) -> StdResult<Response> {
 
     let config = read_config(deps.storage)?;
     let asset = Asset {
-        info: config.payout_token.to_normal(deps.api)?,
+        info: AssetInfo::Token {
+            contract_addr: deps.api.addr_humanize(&config.payout_token)?.to_string(),
+        },
         amount: payout,
     };
 

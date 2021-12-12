@@ -7,7 +7,7 @@ use olympus_pro::{
     custom_treasury::{
         ConfigResponse as CustomTreasuryConfigResponse, QueryMsg as CustomTreasuryQueryMsg,
     },
-    querier::query_total_supply,
+    querier::query_token_supply,
 };
 
 use crate::{
@@ -20,7 +20,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
     let resp = ConfigResponse {
         custom_treasury: deps.api.addr_humanize(&config.custom_treasury)?.to_string(),
-        payout_token: config.payout_token.to_normal(deps.api)?,
+        payout_token: deps.api.addr_humanize(&config.payout_token)?.to_string(),
         principal_token: config.principal_token.to_normal(deps.api)?,
         olympus_treasury: deps
             .api
@@ -70,8 +70,10 @@ pub fn query_bond_price(deps: Deps, env: Env) -> StdResult<Uint128> {
     let config = read_config(deps.storage)?;
     let state = read_state(deps.storage)?;
 
-    let payout_total_supply =
-        query_total_supply(&deps.querier, &config.payout_token.to_normal(deps.api)?)?;
+    let payout_total_supply = query_token_supply(
+        &deps.querier,
+        deps.api.addr_humanize(&config.payout_token)?.to_string(),
+    )?;
 
     Ok(get_bond_price(
         state,
@@ -84,8 +86,10 @@ pub fn query_payout_for(deps: Deps, env: Env, value: Uint128) -> StdResult<(Uint
     let config = read_config(deps.storage)?;
     let state = read_state(deps.storage)?;
 
-    let payout_total_supply =
-        query_total_supply(&deps.querier, &config.payout_token.to_normal(deps.api)?)?;
+    let payout_total_supply = query_token_supply(
+        &deps.querier,
+        deps.api.addr_humanize(&config.payout_token)?.to_string(),
+    )?;
 
     Ok(get_payout_for(
         deps,

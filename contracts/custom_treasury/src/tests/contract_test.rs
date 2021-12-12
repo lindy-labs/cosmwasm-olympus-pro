@@ -17,9 +17,7 @@ fn test_initialization() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
-        payout_token: AssetInfo::NativeToken {
-            denom: "upayout".to_string(),
-        },
+        payout_token: String::from("payout_token"),
         initial_owner: String::from("policy"),
     };
 
@@ -33,9 +31,7 @@ fn test_initialization() {
     let config: ConfigResponse = from_binary(&res).unwrap();
     assert_eq!(
         ConfigResponse {
-            payout_token: AssetInfo::NativeToken {
-                denom: "upayout".to_string(),
-            },
+            payout_token: String::from("payout_token"),
             policy: String::from("policy"),
         },
         config
@@ -249,7 +245,7 @@ fn test_send_payout_tokens_fails_if_unauthorized() {
 }
 
 #[test]
-fn test_send_payout_tokens_native_token_by_bond() {
+fn test_send_payout_tokens_by_bond() {
     let mut deps = mock_dependencies(&[]);
 
     instantiate_custom_treasury(&mut deps);
@@ -278,12 +274,14 @@ fn test_send_payout_tokens_native_token_by_bond() {
     );
     assert_eq!(
         res.messages,
-        vec![SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-            to_address: String::from("bond"),
-            amount: vec![Coin {
-                denom: "upayout".to_string(),
-                amount: Uint128::from(100000000u128)
-            }],
+        vec![SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: "payout_token".to_string(),
+            msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                recipient: String::from("bond"),
+                amount: 100000000u128.into(),
+            })
+            .unwrap(),
+            funds: vec![],
         }))]
     );
 }

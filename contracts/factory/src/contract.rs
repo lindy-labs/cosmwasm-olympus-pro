@@ -167,7 +167,7 @@ fn update_config(
 fn create_bond_and_treasury(
     deps: DepsMut,
     env: Env,
-    payout_token: AssetInfo,
+    payout_token: String,
     principal_token: AssetInfo,
     initial_owner: String,
     fee_tiers: Vec<FeeTier>,
