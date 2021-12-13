@@ -1,4 +1,4 @@
-use cosmwasm_std::{Decimal, Deps, MessageInfo, StdError, StdResult, Storage, Uint128};
+use cosmwasm_std::{Decimal, Deps, Fraction, MessageInfo, StdError, StdResult, Storage, Uint128};
 
 use olympus_pro::{
     custom_bond::{FeeTier, State},
@@ -50,10 +50,12 @@ pub fn get_debt_ratio(state: State, payout_total_supply: Uint128, current_time: 
     Decimal::from_ratio(current_debt, payout_total_supply)
 }
 
-pub fn get_bond_price(state: State, payout_total_supply: Uint128, current_time: u64) -> Uint128 {
-    let price = state.terms.control_variable
-        * get_debt_ratio(state.clone(), payout_total_supply, current_time);
-    std::cmp::min(price, state.terms.minimum_price)
+pub fn get_bond_price(state: State, payout_total_supply: Uint128, current_time: u64) -> Decimal {
+    let price = mul_decimals(
+        state.terms.control_variable,
+        get_debt_ratio(state.clone(), payout_total_supply, current_time),
+    );
+    std::cmp::max(price, state.terms.minimum_price)
 }
 
 pub fn get_true_bond_price(
@@ -61,9 +63,9 @@ pub fn get_true_bond_price(
     state: State,
     payout_total_supply: Uint128,
     current_time: u64,
-) -> Uint128 {
+) -> Decimal {
     let bond_price = get_bond_price(state.clone(), payout_total_supply, current_time);
-    bond_price + (bond_price * get_current_olympus_fee(config, state))
+    bond_price + (mul_decimals(bond_price, get_current_olympus_fee(config, state)))
 }
 
 pub fn get_payout_for(
@@ -79,7 +81,7 @@ pub fn get_payout_for(
     let bond_price = get_bond_price(state.clone(), payout_total_supply, current_time);
 
     if config.fee_in_payout {
-        let total = value * Decimal::from_ratio(Uint128::from(1u128), bond_price);
+        let total = value * bond_price.inv().unwrap();
         let fee = total * current_olympus_fee;
         Ok((total.checked_sub(fee)?, fee))
     } else {
@@ -91,7 +93,7 @@ pub fn get_payout_for(
             },
             config.payout_decimals,
             config.principal_decimals,
-        ) * Decimal::from_ratio(Uint128::from(1u128), bond_price);
+        ) * bond_price.inv().unwrap();
         Ok((payout, fee))
     }
 }
@@ -100,28 +102,25 @@ pub fn get_max_payout(state: State, payout_total_supply: Uint128) -> StdResult<U
     Ok(payout_total_supply * state.terms.max_payout)
 }
 
-pub fn adjust(state: &mut State, current_time: u64) -> StdResult<(bool, Uint128)> {
+pub fn adjust(state: &mut State, current_time: u64) -> StdResult<(bool, Decimal)> {
     let time_can_adjust = state.adjustment.last_time + state.adjustment.buffer;
     if !state.adjustment.rate.is_zero() && current_time >= time_can_adjust {
         let inital = state.terms.control_variable;
         if state.adjustment.addition {
-            state.terms.control_variable += state.adjustment.rate;
+            state.terms.control_variable = state.terms.control_variable + state.adjustment.rate;
             if state.terms.control_variable >= state.adjustment.target {
-                state.adjustment.rate = Uint128::zero();
+                state.adjustment.rate = Decimal::zero();
             }
         } else {
-            state.terms.control_variable = state
-                .terms
-                .control_variable
-                .checked_sub(state.adjustment.rate)?;
+            state.terms.control_variable = state.terms.control_variable - state.adjustment.rate;
             if state.terms.control_variable <= state.adjustment.target {
-                state.adjustment.rate = Uint128::zero();
+                state.adjustment.rate = Decimal::zero();
             }
         }
         state.adjustment.last_time = current_time;
         Ok((true, inital))
     } else {
-        Ok((false, Uint128::zero()))
+        Ok((false, Decimal::zero()))
     }
 }
 
@@ -142,4 +141,11 @@ pub fn get_received_native_fund(storage: &dyn Storage, info: MessageInfo) -> Std
     } else {
         Err(StdError::generic_err("not support cw20 token"))
     }
+}
+
+pub fn mul_decimals(a: Decimal, b: Decimal) -> Decimal {
+    Decimal::from_ratio(
+        a.numerator() * b.numerator(),
+        a.denominator() * b.denominator(),
+    )
 }

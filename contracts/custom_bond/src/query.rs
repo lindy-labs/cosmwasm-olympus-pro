@@ -66,7 +66,7 @@ pub fn query_current_olympus_fee(deps: Deps) -> StdResult<Decimal> {
     Ok(get_current_olympus_fee(config, state))
 }
 
-pub fn query_bond_price(deps: Deps, env: Env) -> StdResult<Uint128> {
+pub fn query_bond_price(deps: Deps, env: Env) -> StdResult<Decimal> {
     let config = read_config(deps.storage)?;
     let state = read_state(deps.storage)?;
 

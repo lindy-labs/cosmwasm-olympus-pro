@@ -1,14 +1,10 @@
 use cosmwasm_std::testing::{mock_env, mock_info};
-use cosmwasm_std::{
-    attr, from_binary, to_binary, BankMsg, Coin, CosmosMsg, Decimal, StdError, SubMsg, Uint128,
-    WasmMsg,
-};
+use cosmwasm_std::{attr, from_binary, Decimal, StdError, Uint128};
 
-use cw20::Cw20ExecuteMsg;
 use olympus_pro::custom_bond::{
     Adjustment, ConfigResponse, ExecuteMsg, FeeTier, InstantiateMsg, QueryMsg, State, Terms,
 };
-use terraswap::asset::{Asset, AssetInfo};
+use terraswap::asset::AssetInfo;
 
 use crate::{
     contract::{execute, instantiate, query},
@@ -99,7 +95,7 @@ fn test_initialization() {
 fn test_update_policy_fails_if_unauthorized() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let info = mock_info("addr", &[]);
     let msg = ExecuteMsg::UpdatePolicy {
@@ -114,7 +110,7 @@ fn test_update_policy_fails_if_unauthorized() {
 fn test_update_policy_by_policy() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::UpdatePolicy {
@@ -139,7 +135,7 @@ fn test_update_policy_by_policy() {
 fn test_update_olympus_treasury_fails_if_unauthorized() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let info = mock_info("addr", &[]);
     let msg = ExecuteMsg::UpdateOlympusTreasury {
@@ -154,7 +150,7 @@ fn test_update_olympus_treasury_fails_if_unauthorized() {
 fn test_update_olympus_treasury_by_olympus_dao() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let info = mock_info("olympus_dao", &[]);
     let msg = ExecuteMsg::UpdateOlympusTreasury {
@@ -182,7 +178,7 @@ fn test_update_olympus_treasury_by_olympus_dao() {
 fn test_initialize_bond_fails_if_unauthorized() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let info = mock_info("addr", &[]);
     let msg = ExecuteMsg::InitializeBond {
@@ -204,7 +200,7 @@ fn test_initialize_bond_fails_if_unauthorized() {
 fn test_initialize_bond_by_policy() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::InitializeBond {
@@ -248,7 +244,7 @@ fn test_initialize_bond_by_policy() {
 fn test_initialize_bond_fails_if_current_debt_is_not_zero() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     initialize_bond(&mut deps, mock_env());
 
@@ -275,7 +271,7 @@ fn test_initialize_bond_fails_if_current_debt_is_not_zero() {
 fn test_initialize_bond_fails_if_vesting_term_is_less_than_36hours() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::InitializeBond {
@@ -300,7 +296,7 @@ fn test_initialize_bond_fails_if_vesting_term_is_less_than_36hours() {
 fn test_initialize_bond_fails_if_max_payout_is_greater_or_euqal_than_1percent() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::InitializeBond {
@@ -325,7 +321,7 @@ fn test_initialize_bond_fails_if_max_payout_is_greater_or_euqal_than_1percent() 
 fn test_set_bond_terms_fails_if_unauthorized() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let info = mock_info("addr", &[]);
     let msg = ExecuteMsg::SetBondTerms {
@@ -342,7 +338,7 @@ fn test_set_bond_terms_fails_if_unauthorized() {
 fn test_send_bond_terms_by_policy_set_vesting_term() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::SetBondTerms {
@@ -364,7 +360,7 @@ fn test_send_bond_terms_by_policy_set_vesting_term() {
 fn test_send_bond_terms_fails_if_vesting_term_is_less_than_36hours() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::SetBondTerms {
@@ -384,7 +380,7 @@ fn test_send_bond_terms_fails_if_vesting_term_is_less_than_36hours() {
 fn test_send_bond_terms_by_policy_set_max_payout() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::SetBondTerms {
@@ -406,7 +402,7 @@ fn test_send_bond_terms_by_policy_set_max_payout() {
 fn test_send_bond_terms_fails_if_max_payout_is_greater_or_equal_than_1percent() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::SetBondTerms {
@@ -426,7 +422,7 @@ fn test_send_bond_terms_fails_if_max_payout_is_greater_or_equal_than_1percent() 
 fn test_send_bond_terms_by_policy_set_max_debt() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::SetBondTerms {
@@ -448,7 +444,7 @@ fn test_send_bond_terms_by_policy_set_max_debt() {
 fn test_set_adjustment_fails_if_unauthorized() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     initialize_bond(&mut deps, mock_env());
 
@@ -468,7 +464,7 @@ fn test_set_adjustment_fails_if_unauthorized() {
 fn test_set_adjustment_by_policy() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     initialize_bond(&mut deps, mock_env());
 
@@ -502,14 +498,14 @@ fn test_set_adjustment_by_policy() {
 fn test_set_adjustment_fails_if_increment_is_greater_than_30percent_of_control_variable() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
-    initialize_bond(&mut deps, mock_env());
+    let (terms, _) = initialize_bond(&mut deps, mock_env());
 
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::SetAdjustment {
         addition: true,
-        increment: Uint128::from(31u128),
+        increment: terms.control_variable * Decimal::percent(3) + Uint128::from(1u128),
         target: Uint128::from(100000000u128),
         buffer: 86400u64,
     };

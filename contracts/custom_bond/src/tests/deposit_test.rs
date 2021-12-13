@@ -16,7 +16,8 @@ use crate::{
     tests::{
         mock_querier::mock_dependencies,
         test_utils::{
-            initialize_bond, instantiate_custom_bond, instantiate_custom_bond_with_principal_token,
+            increase_time, initialize_bond, instantiate_custom_bond,
+            instantiate_custom_bond_with_principal_token,
         },
     },
 };
@@ -31,7 +32,8 @@ fn test_deposit_fails_if_denom_amount_is_zero() {
         AssetInfo::NativeToken {
             denom: "uusd".to_string(),
         },
-    );
+    )
+    .unwrap();
 
     let env = mock_env();
     initialize_bond(&mut deps, env);
@@ -62,7 +64,8 @@ fn test_deposit_fails_if_several_denom_received() {
         AssetInfo::NativeToken {
             denom: "uusd".to_string(),
         },
-    );
+    )
+    .unwrap();
 
     let env = mock_env();
     initialize_bond(&mut deps, env);
@@ -93,7 +96,7 @@ fn test_deposit_fails_if_several_denom_received() {
 fn test_deposit_fails_if_token_amount_is_zero() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let env = mock_env();
     initialize_bond(&mut deps, env);
@@ -117,7 +120,7 @@ fn test_deposit_fails_if_token_amount_is_zero() {
 fn test_deposit_fails_if_received_token_is_invalid() {
     let mut deps = mock_dependencies(&[]);
 
-    instantiate_custom_bond(&mut deps, None, None);
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let env = mock_env();
     initialize_bond(&mut deps, env);
@@ -135,4 +138,144 @@ fn test_deposit_fails_if_received_token_is_invalid() {
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
     assert_eq!(res, StdError::generic_err("invalid cw20 token"));
+}
+
+#[test]
+fn test_deposit_fails_if_true_bond_price_is_greater_than_max_price() {
+    let mut deps = mock_dependencies(&[]);
+
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
+
+    let mut env = mock_env();
+    initialize_bond(&mut deps, env.clone());
+
+    let time_increase = 100u64;
+    increase_time(&mut env, time_increase);
+
+    let info = mock_info("principal_token", &[]);
+    let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
+        sender: "addr".to_string(),
+        msg: to_binary(&Cw20HookMsg::Deposit {
+            max_price: Uint128::from(1000u128),
+            depositor: String::from("depositor"),
+        })
+        .unwrap(),
+        amount: Uint128::from(100000000u128),
+    });
+
+    let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
+    assert_eq!(
+        res,
+        StdError::generic_err("slippage limit: more than max price")
+    );
+}
+
+#[test]
+fn test_deposit_fails_if_payout_is_too_small() {
+    let mut deps = mock_dependencies(&[]);
+
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
+
+    let mut env = mock_env();
+    initialize_bond(&mut deps, env.clone());
+
+    let time_increase = 100u64;
+    increase_time(&mut env, time_increase);
+
+    let info = mock_info("principal_token", &[]);
+    let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
+        sender: "addr".to_string(),
+        msg: to_binary(&Cw20HookMsg::Deposit {
+            max_price: Uint128::from(10000u128),
+            depositor: String::from("depositor"),
+        })
+        .unwrap(),
+        amount: Uint128::from(100000u128),
+    });
+
+    let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
+    assert_eq!(res, StdError::generic_err("bond too small"));
+}
+
+#[test]
+fn test_deposit_fails_if_payout_is_too_large() {
+    let mut deps = mock_dependencies(&[]);
+
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
+
+    let mut env = mock_env();
+    initialize_bond(&mut deps, env.clone());
+
+    let time_increase = 100u64;
+    increase_time(&mut env, time_increase);
+
+    let info = mock_info("principal_token", &[]);
+    let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
+        sender: "addr".to_string(),
+        msg: to_binary(&Cw20HookMsg::Deposit {
+            max_price: Uint128::from(10000u128),
+            depositor: String::from("depositor"),
+        })
+        .unwrap(),
+        amount: Uint128::from(1000000000000u128),
+    });
+
+    let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
+    assert_eq!(res, StdError::generic_err("bond too large"));
+}
+
+#[test]
+fn test_deposit_fails_if_max_payout_reached() {
+    let mut deps = mock_dependencies(&[]);
+
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
+
+    let mut env = mock_env();
+    initialize_bond(&mut deps, env.clone());
+
+    let time_increase = 100u64;
+    increase_time(&mut env, time_increase);
+
+    let info = mock_info("principal_token", &[]);
+    let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
+        sender: "addr".to_string(),
+        msg: to_binary(&Cw20HookMsg::Deposit {
+            max_price: Uint128::from(10000u128),
+            depositor: String::from("depositor"),
+        })
+        .unwrap(),
+        amount: Uint128::from(10000000000u128),
+    });
+
+    let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
+    assert_eq!(res, StdError::generic_err("max capacity reached"));
+}
+
+#[test]
+fn test_deposit() {
+    let mut deps = mock_dependencies(&[]);
+
+    let initialize_msg = instantiate_custom_bond(&mut deps, None, None).unwrap();
+
+    let mut env = mock_env();
+    let (terms, initial_debt) = initialize_bond(&mut deps, env.clone());
+
+    let time_increase = 100u64;
+    increase_time(&mut env, time_increase);
+    let debt_decay =
+        initial_debt * Decimal::from_ratio(time_increase as u128, terms.vesting_term as u128);
+
+    let info = mock_info("principal_token", &[]);
+    let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
+        sender: "addr".to_string(),
+        msg: to_binary(&Cw20HookMsg::Deposit {
+            max_price: Uint128::from(10000u128),
+            depositor: String::from("depositor"),
+        })
+        .unwrap(),
+        amount: Uint128::from(10000000u128),
+    });
+
+    let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
+    assert_eq!(res, StdError::generic_err("max capacity reached"));
 }

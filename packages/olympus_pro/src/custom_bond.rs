@@ -32,8 +32,8 @@ pub enum ExecuteMsg {
     },
     SetAdjustment {
         addition: bool,
-        increment: Uint128,
-        target: Uint128,
+        increment: Decimal,
+        target: Decimal,
         buffer: u64,
     },
     UpdatePolicy {
@@ -44,7 +44,7 @@ pub enum ExecuteMsg {
     },
     PaySubsidy {},
     Deposit {
-        max_price: Uint128,
+        max_price: Decimal,
         depositor: String,
     },
     Redeem {
@@ -56,7 +56,7 @@ pub enum ExecuteMsg {
 #[serde(rename_all = "snake_case")]
 pub enum Cw20HookMsg {
     Deposit {
-        max_price: Uint128,
+        max_price: Decimal,
         depositor: String,
     },
 }
@@ -93,9 +93,9 @@ pub struct ConfigResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Default)]
 pub struct Terms {
-    pub control_variable: Uint128,
+    pub control_variable: Decimal,
     pub vesting_term: u64,
-    pub minimum_price: Uint128,
+    pub minimum_price: Decimal,
     pub max_payout: Decimal,
     pub max_debt: Uint128,
 }
@@ -103,8 +103,8 @@ pub struct Terms {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Default)]
 pub struct Adjustment {
     pub addition: bool,
-    pub rate: Uint128,
-    pub target: Uint128,
+    pub rate: Decimal,
+    pub target: Decimal,
     pub buffer: u64,
     pub last_time: u64,
 }
@@ -131,5 +131,5 @@ pub struct BondInfo {
     pub payout: Uint128,
     pub vesting: u64,
     pub last_time: u64,
-    pub true_price_paid: Uint128,
+    pub true_price_paid: Decimal,
 }

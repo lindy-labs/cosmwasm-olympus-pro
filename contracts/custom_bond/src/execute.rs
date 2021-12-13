@@ -18,7 +18,7 @@ use crate::{
     },
     utils::{
         adjust, decay_debt, get_current_debt, get_debt_ratio, get_max_payout, get_payout_for,
-        get_true_bond_price,
+        get_true_bond_price, mul_decimals,
     },
 };
 
@@ -125,13 +125,13 @@ pub fn set_adjustment(
     deps: DepsMut,
     env: Env,
     addition: bool,
-    increment: Uint128,
-    target: Uint128,
+    increment: Decimal,
+    target: Decimal,
     buffer: u64,
 ) -> StdResult<Response> {
     let mut state = read_state(deps.storage)?;
 
-    if increment > state.terms.control_variable * Decimal::percent(3u64) {
+    if increment > mul_decimals(state.terms.control_variable, Decimal::percent(3u64)) {
         return Err(StdError::generic_err("increment too large"));
     }
 
@@ -168,7 +168,7 @@ pub fn deposit(
     deps: DepsMut,
     env: Env,
     amount: Uint128,
-    max_price: Uint128,
+    max_price: Decimal,
     depositor: String,
 ) -> StdResult<Response> {
     if amount.is_zero() {
@@ -193,6 +193,7 @@ pub fn deposit(
         payout_total_supply,
         current_time,
     );
+
     if max_price < native_price {
         return Err(StdError::generic_err("slippage limit: more than max price"));
     }
@@ -295,12 +296,14 @@ pub fn deposit(
         )?)
     }
 
-    let mut bond_price = state.terms.control_variable
-        * get_debt_ratio(state.clone(), payout_total_supply, current_time);
+    let mut bond_price = mul_decimals(
+        state.terms.control_variable,
+        get_debt_ratio(state.clone(), payout_total_supply, current_time),
+    );
     if bond_price < state.terms.minimum_price {
         bond_price = state.terms.minimum_price;
     } else {
-        state.terms.minimum_price = Uint128::zero();
+        state.terms.minimum_price = Decimal::zero();
     }
 
     let mut attrs: Vec<Attribute> = vec![
@@ -311,7 +314,7 @@ pub fn deposit(
             "expires",
             (current_time + state.terms.vesting_term).to_string(),
         ),
-        attr("bond_price", bond_price),
+        attr("bond_price", bond_price.to_string()),
         attr(
             "debt_ratio",
             get_debt_ratio(state.clone(), payout_total_supply, current_time).to_string(),
