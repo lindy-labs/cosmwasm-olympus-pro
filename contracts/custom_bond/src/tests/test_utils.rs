@@ -1,5 +1,6 @@
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
 use cosmwasm_std::{Decimal, Env, OwnedDeps, StdResult, Uint128};
+use std::str::FromStr;
 
 use crate::{
     contract::{execute, instantiate},
@@ -105,9 +106,9 @@ pub fn initialize_bond(
     let info = mock_info("policy", &[]);
 
     let terms = Terms {
-        control_variable: Uint128::from(800000000000u128),
+        control_variable: Decimal::from_ratio(1u128, 10u128),
         vesting_term: 864000,
-        minimum_price: Uint128::from(10000u128),
+        minimum_price: Decimal::from_str("0.157284").unwrap(),
         max_payout: Decimal::from_ratio(2u128, 100000u128),
         max_debt: Uint128::from(30000000000u128),
     };

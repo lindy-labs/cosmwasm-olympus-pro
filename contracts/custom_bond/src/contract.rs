@@ -74,7 +74,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             let amount = get_received_native_fund(deps.storage, info)?;
             deposit(deps, env, amount, max_price, depositor)
         }
-        ExecuteMsg::Redeem { user } => redeem(deps, env, user),
+        ExecuteMsg::Redeem {} => redeem(deps, env, info.sender.to_string()),
         ExecuteMsg::PaySubsidy {} => pay_subsidy(deps, info),
         ExecuteMsg::UpdateOlympusTreasury { olympus_treasury } => {
             update_olympus_treasury(deps, info, olympus_treasury)

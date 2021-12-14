@@ -19,11 +19,17 @@ fn get_debt_decay(state: State, current_time: u64) -> Uint128 {
 }
 
 pub fn get_current_debt(state: State, current_time: u64) -> Uint128 {
-    state.total_debt - get_debt_decay(state, current_time)
+    state
+        .total_debt
+        .checked_sub(get_debt_decay(state, current_time))
+        .unwrap()
 }
 
 pub fn decay_debt(state: &mut State, current_time: u64) {
-    state.total_debt = state.total_debt - get_debt_decay(state.clone(), current_time);
+    state.total_debt = state
+        .total_debt
+        .checked_sub(get_debt_decay(state.clone(), current_time))
+        .unwrap();
     state.last_decay = current_time;
 }
 
@@ -51,7 +57,7 @@ pub fn get_debt_ratio(state: State, payout_total_supply: Uint128, current_time: 
 }
 
 pub fn get_bond_price(state: State, payout_total_supply: Uint128, current_time: u64) -> Decimal {
-    let price = mul_decimals(
+    let price = decimal_multiplication_in_256(
         state.terms.control_variable,
         get_debt_ratio(state.clone(), payout_total_supply, current_time),
     );
@@ -65,7 +71,10 @@ pub fn get_true_bond_price(
     current_time: u64,
 ) -> Decimal {
     let bond_price = get_bond_price(state.clone(), payout_total_supply, current_time);
-    bond_price + (mul_decimals(bond_price, get_current_olympus_fee(config, state)))
+    decimal_summation_in_256(
+        bond_price,
+        decimal_multiplication_in_256(bond_price, get_current_olympus_fee(config, state)),
+    )
 }
 
 pub fn get_payout_for(
@@ -107,12 +116,14 @@ pub fn adjust(state: &mut State, current_time: u64) -> StdResult<(bool, Decimal)
     if !state.adjustment.rate.is_zero() && current_time >= time_can_adjust {
         let inital = state.terms.control_variable;
         if state.adjustment.addition {
-            state.terms.control_variable = state.terms.control_variable + state.adjustment.rate;
+            state.terms.control_variable =
+                decimal_summation_in_256(state.terms.control_variable, state.adjustment.rate);
             if state.terms.control_variable >= state.adjustment.target {
                 state.adjustment.rate = Decimal::zero();
             }
         } else {
-            state.terms.control_variable = state.terms.control_variable - state.adjustment.rate;
+            state.terms.control_variable =
+                decimal_subtraction_in_256(state.terms.control_variable, state.adjustment.rate);
             if state.terms.control_variable <= state.adjustment.target {
                 state.adjustment.rate = Decimal::zero();
             }
@@ -143,9 +154,25 @@ pub fn get_received_native_fund(storage: &dyn Storage, info: MessageInfo) -> Std
     }
 }
 
-pub fn mul_decimals(a: Decimal, b: Decimal) -> Decimal {
+pub fn decimal_multiplication_in_256(a: Decimal, b: Decimal) -> Decimal {
     let a_u256: Decimal256 = a.into();
     let b_u256: Decimal256 = b.into();
     let c_u256: Decimal = (b_u256 * a_u256).into();
+    c_u256
+}
+
+/// return a + b
+pub fn decimal_summation_in_256(a: Decimal, b: Decimal) -> Decimal {
+    let a_u256: Decimal256 = a.into();
+    let b_u256: Decimal256 = b.into();
+    let c_u256: Decimal = (b_u256 + a_u256).into();
+    c_u256
+}
+
+/// return a - b
+pub fn decimal_subtraction_in_256(a: Decimal, b: Decimal) -> Decimal {
+    let a_u256: Decimal256 = a.into();
+    let b_u256: Decimal256 = b.into();
+    let c_u256: Decimal = (a_u256 - b_u256).into();
     c_u256
 }

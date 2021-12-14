@@ -1,5 +1,6 @@
 use cosmwasm_std::testing::{mock_env, mock_info};
 use cosmwasm_std::{attr, from_binary, Decimal, StdError, Uint128};
+use std::str::FromStr;
 
 use olympus_pro::custom_bond::{
     Adjustment, ConfigResponse, ExecuteMsg, FeeTier, InstantiateMsg, QueryMsg, State, Terms,
@@ -183,9 +184,9 @@ fn test_initialize_bond_fails_if_unauthorized() {
     let info = mock_info("addr", &[]);
     let msg = ExecuteMsg::InitializeBond {
         terms: Terms {
-            control_variable: Uint128::from(1000u128),
+            control_variable: Decimal::from_ratio(1u128, 10u128),
             vesting_term: 864000,
-            minimum_price: Uint128::from(10000u128),
+            minimum_price: Decimal::from_str("0.157284").unwrap(),
             max_payout: Decimal::from_ratio(1u128, 10000u128),
             max_debt: Uint128::from(1000000u128),
         },
@@ -205,9 +206,9 @@ fn test_initialize_bond_by_policy() {
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::InitializeBond {
         terms: Terms {
-            control_variable: Uint128::from(1000u128),
+            control_variable: Decimal::from_ratio(1u128, 10u128),
             vesting_term: 864000,
-            minimum_price: Uint128::from(10000u128),
+            minimum_price: Decimal::from_str("0.157284").unwrap(),
             max_payout: Decimal::from_ratio(1u128, 10000u128),
             max_debt: Uint128::from(1000000u128),
         },
@@ -224,9 +225,9 @@ fn test_initialize_bond_by_policy() {
         State {
             total_debt: Uint128::from(100000u128),
             terms: Terms {
-                control_variable: Uint128::from(1000u128),
+                control_variable: Decimal::from_ratio(1u128, 10u128),
                 vesting_term: 864000,
-                minimum_price: Uint128::from(10000u128),
+                minimum_price: Decimal::from_str("0.157284").unwrap(),
                 max_payout: Decimal::from_ratio(1u128, 10000u128),
                 max_debt: Uint128::from(1000000u128),
             },
@@ -251,9 +252,9 @@ fn test_initialize_bond_fails_if_current_debt_is_not_zero() {
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::InitializeBond {
         terms: Terms {
-            control_variable: Uint128::from(1000u128),
+            control_variable: Decimal::from_ratio(1u128, 10u128),
             vesting_term: 864000,
-            minimum_price: Uint128::from(10000u128),
+            minimum_price: Decimal::from_str("0.157284").unwrap(),
             max_payout: Decimal::from_ratio(1u128, 10000u128),
             max_debt: Uint128::from(1000000u128),
         },
@@ -276,9 +277,9 @@ fn test_initialize_bond_fails_if_vesting_term_is_less_than_36hours() {
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::InitializeBond {
         terms: Terms {
-            control_variable: Uint128::from(1000u128),
+            control_variable: Decimal::from_ratio(1u128, 10u128),
             vesting_term: 86400,
-            minimum_price: Uint128::from(10000u128),
+            minimum_price: Decimal::from_str("0.157284").unwrap(),
             max_payout: Decimal::from_ratio(1u128, 10000u128),
             max_debt: Uint128::from(1000000u128),
         },
@@ -301,9 +302,9 @@ fn test_initialize_bond_fails_if_max_payout_is_greater_or_euqal_than_1percent() 
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::InitializeBond {
         terms: Terms {
-            control_variable: Uint128::from(1000u128),
+            control_variable: Decimal::from_ratio(1u128, 10u128),
             vesting_term: 864000,
-            minimum_price: Uint128::from(10000u128),
+            minimum_price: Decimal::from_str("0.157284").unwrap(),
             max_payout: Decimal::percent(2),
             max_debt: Uint128::from(1000000u128),
         },
@@ -451,8 +452,8 @@ fn test_set_adjustment_fails_if_unauthorized() {
     let info = mock_info("addr", &[]);
     let msg = ExecuteMsg::SetAdjustment {
         addition: true,
-        increment: Uint128::from(10u128),
-        target: Uint128::from(100000000u128),
+        increment: Decimal::from_str("0.0002").unwrap(),
+        target: Decimal::from_str("0.176476").unwrap(),
         buffer: 86400u64,
     };
 
@@ -471,8 +472,8 @@ fn test_set_adjustment_by_policy() {
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::SetAdjustment {
         addition: true,
-        increment: Uint128::from(10u128),
-        target: Uint128::from(100000000u128),
+        increment: Decimal::from_str("0.0002").unwrap(),
+        target: Decimal::from_str("0.176476").unwrap(),
         buffer: 86400u64,
     };
 
@@ -485,8 +486,8 @@ fn test_set_adjustment_by_policy() {
     assert_eq!(
         Adjustment {
             addition: true,
-            rate: Uint128::from(10u128),
-            target: Uint128::from(100000000u128),
+            rate: Decimal::from_str("0.0002").unwrap(),
+            target: Decimal::from_str("0.176476").unwrap(),
             buffer: 86400u64,
             last_time: env.block.time.seconds()
         },
@@ -505,8 +506,8 @@ fn test_set_adjustment_fails_if_increment_is_greater_than_30percent_of_control_v
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::SetAdjustment {
         addition: true,
-        increment: terms.control_variable * Decimal::percent(3) + Uint128::from(1u128),
-        target: Uint128::from(100000000u128),
+        increment: Decimal::from_str("0.004").unwrap(),
+        target: Decimal::from_str("0.176476").unwrap(),
         buffer: 86400u64,
     };
 

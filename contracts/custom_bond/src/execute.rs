@@ -17,8 +17,8 @@ use crate::{
         store_state,
     },
     utils::{
-        adjust, decay_debt, get_current_debt, get_debt_ratio, get_max_payout, get_payout_for,
-        get_true_bond_price, mul_decimals,
+        adjust, decay_debt, decimal_multiplication_in_256, get_current_debt, get_debt_ratio,
+        get_max_payout, get_payout_for, get_true_bond_price,
     },
 };
 
@@ -131,7 +131,9 @@ pub fn set_adjustment(
 ) -> StdResult<Response> {
     let mut state = read_state(deps.storage)?;
 
-    if increment > mul_decimals(state.terms.control_variable, Decimal::percent(3u64)) {
+    if increment
+        > decimal_multiplication_in_256(state.terms.control_variable, Decimal::percent(3u64))
+    {
         return Err(StdError::generic_err("increment too large"));
     }
 
@@ -296,7 +298,7 @@ pub fn deposit(
         )?)
     }
 
-    let mut bond_price = mul_decimals(
+    let mut bond_price = decimal_multiplication_in_256(
         state.terms.control_variable,
         get_debt_ratio(state.clone(), payout_total_supply, current_time),
     );

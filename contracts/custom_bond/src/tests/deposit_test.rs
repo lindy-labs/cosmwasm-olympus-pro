@@ -3,6 +3,7 @@ use cosmwasm_std::{
     attr, from_binary, to_binary, BankMsg, Coin, CosmosMsg, Decimal, StdError, SubMsg, Uint128,
     WasmMsg,
 };
+use std::str::FromStr;
 
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use olympus_pro::custom_bond::{
@@ -46,7 +47,7 @@ fn test_deposit_fails_if_denom_amount_is_zero() {
         }],
     );
     let msg = ExecuteMsg::Deposit {
-        max_price: Uint128::from(1000u128),
+        max_price: Decimal::from_str("0.17476").unwrap(),
         depositor: String::from("depositor"),
     };
 
@@ -84,7 +85,7 @@ fn test_deposit_fails_if_several_denom_received() {
         ],
     );
     let msg = ExecuteMsg::Deposit {
-        max_price: Uint128::from(1000u128),
+        max_price: Decimal::from_str("0.17476").unwrap(),
         depositor: String::from("depositor"),
     };
 
@@ -105,7 +106,7 @@ fn test_deposit_fails_if_token_amount_is_zero() {
     let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
         sender: "addr".to_string(),
         msg: to_binary(&Cw20HookMsg::Deposit {
-            max_price: Uint128::from(1000u128),
+            max_price: Decimal::from_str("0.17476").unwrap(),
             depositor: String::from("depositor"),
         })
         .unwrap(),
@@ -129,7 +130,7 @@ fn test_deposit_fails_if_received_token_is_invalid() {
     let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
         sender: "addr".to_string(),
         msg: to_binary(&Cw20HookMsg::Deposit {
-            max_price: Uint128::from(1000u128),
+            max_price: Decimal::from_str("0.17476").unwrap(),
             depositor: String::from("depositor"),
         })
         .unwrap(),
@@ -156,7 +157,7 @@ fn test_deposit_fails_if_true_bond_price_is_greater_than_max_price() {
     let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
         sender: "addr".to_string(),
         msg: to_binary(&Cw20HookMsg::Deposit {
-            max_price: Uint128::from(1000u128),
+            max_price: Decimal::from_str("0.17476").unwrap(),
             depositor: String::from("depositor"),
         })
         .unwrap(),
@@ -186,7 +187,7 @@ fn test_deposit_fails_if_payout_is_too_small() {
     let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
         sender: "addr".to_string(),
         msg: to_binary(&Cw20HookMsg::Deposit {
-            max_price: Uint128::from(10000u128),
+            max_price: Decimal::from_str("0.17476").unwrap(),
             depositor: String::from("depositor"),
         })
         .unwrap(),
@@ -213,7 +214,7 @@ fn test_deposit_fails_if_payout_is_too_large() {
     let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
         sender: "addr".to_string(),
         msg: to_binary(&Cw20HookMsg::Deposit {
-            max_price: Uint128::from(10000u128),
+            max_price: Decimal::from_str("0.17476").unwrap(),
             depositor: String::from("depositor"),
         })
         .unwrap(),
@@ -240,7 +241,7 @@ fn test_deposit_fails_if_max_payout_reached() {
     let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
         sender: "addr".to_string(),
         msg: to_binary(&Cw20HookMsg::Deposit {
-            max_price: Uint128::from(10000u128),
+            max_price: Decimal::from_str("0.17476").unwrap(),
             depositor: String::from("depositor"),
         })
         .unwrap(),
@@ -269,7 +270,7 @@ fn test_deposit() {
     let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
         sender: "addr".to_string(),
         msg: to_binary(&Cw20HookMsg::Deposit {
-            max_price: Uint128::from(10000u128),
+            max_price: Decimal::from_str("0.17476").unwrap(),
             depositor: String::from("depositor"),
         })
         .unwrap(),
