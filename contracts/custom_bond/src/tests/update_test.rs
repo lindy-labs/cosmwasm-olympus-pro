@@ -501,7 +501,7 @@ fn test_set_adjustment_fails_if_increment_is_greater_than_30percent_of_control_v
 
     instantiate_custom_bond(&mut deps, None, None).unwrap();
 
-    let (terms, _) = initialize_bond(&mut deps, mock_env());
+    initialize_bond(&mut deps, mock_env());
 
     let info = mock_info("policy", &[]);
     let msg = ExecuteMsg::SetAdjustment {

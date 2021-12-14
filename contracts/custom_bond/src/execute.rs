@@ -277,8 +277,7 @@ pub fn deposit(
         funds: vec![],
         msg: to_binary(&CustomTreasuryExecuteMsg::SendPayoutTokens {
             amount: payout_from_treasury,
-        })
-        .unwrap(),
+        })?,
     }));
 
     if !fee.is_zero() {

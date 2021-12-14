@@ -1,19 +1,19 @@
 use cosmwasm_std::testing::{mock_env, mock_info};
 use cosmwasm_std::{
-    attr, from_binary, to_binary, BankMsg, Coin, CosmosMsg, Decimal, StdError, SubMsg, Uint128,
+    attr, from_binary, to_binary, Coin, CosmosMsg, Decimal, Fraction, StdError, SubMsg, Uint128,
     WasmMsg,
 };
 use std::str::FromStr;
 
-use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
-use olympus_pro::custom_bond::{
-    Adjustment, ConfigResponse, Cw20HookMsg, ExecuteMsg, FeeTier, InstantiateMsg, QueryMsg, State,
-    Terms,
+use cw20::Cw20ReceiveMsg;
+use olympus_pro::{
+    custom_bond::{Adjustment, BondInfo, Cw20HookMsg, ExecuteMsg, QueryMsg, State},
+    custom_treasury::ExecuteMsg as CustomTreasuryExecuteMsg,
 };
-use terraswap::asset::{Asset, AssetInfo};
+use terraswap::asset::AssetInfo;
 
 use crate::{
-    contract::{execute, instantiate, query},
+    contract::{execute, query},
     tests::{
         mock_querier::mock_dependencies,
         test_utils::{
@@ -157,7 +157,7 @@ fn test_deposit_fails_if_true_bond_price_is_greater_than_max_price() {
     let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
         sender: "addr".to_string(),
         msg: to_binary(&Cw20HookMsg::Deposit {
-            max_price: Decimal::from_str("0.17476").unwrap(),
+            max_price: Decimal::from_str("0.14").unwrap(),
             depositor: String::from("depositor"),
         })
         .unwrap(),
@@ -191,7 +191,7 @@ fn test_deposit_fails_if_payout_is_too_small() {
             depositor: String::from("depositor"),
         })
         .unwrap(),
-        amount: Uint128::from(100000u128),
+        amount: Uint128::from(1000u128),
     });
 
     let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
@@ -218,7 +218,7 @@ fn test_deposit_fails_if_payout_is_too_large() {
             depositor: String::from("depositor"),
         })
         .unwrap(),
-        amount: Uint128::from(1000000000000u128),
+        amount: Uint128::from(4000000u128),
     });
 
     let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
@@ -245,7 +245,7 @@ fn test_deposit_fails_if_max_payout_reached() {
             depositor: String::from("depositor"),
         })
         .unwrap(),
-        amount: Uint128::from(10000000000u128),
+        amount: Uint128::from(1000000u128),
     });
 
     let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
@@ -253,19 +253,22 @@ fn test_deposit_fails_if_max_payout_reached() {
 }
 
 #[test]
-fn test_deposit() {
+fn test_first_deposit() {
     let mut deps = mock_dependencies(&[]);
 
-    let initialize_msg = instantiate_custom_bond(&mut deps, None, None).unwrap();
+    instantiate_custom_bond(&mut deps, None, None).unwrap();
 
     let mut env = mock_env();
     let (terms, initial_debt) = initialize_bond(&mut deps, env.clone());
 
     let time_increase = 100u64;
+
     increase_time(&mut env, time_increase);
+
     let debt_decay =
         initial_debt * Decimal::from_ratio(time_increase as u128, terms.vesting_term as u128);
 
+    let amount = Uint128::from(100000u128);
     let info = mock_info("principal_token", &[]);
     let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
         sender: "addr".to_string(),
@@ -274,9 +277,70 @@ fn test_deposit() {
             depositor: String::from("depositor"),
         })
         .unwrap(),
-        amount: Uint128::from(10000000u128),
+        amount,
     });
 
-    let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
-    assert_eq!(res, StdError::generic_err("max capacity reached"));
+    let total_supply = Uint128::from(1000000000000u128);
+    let total_debt = initial_debt - debt_decay + amount;
+    let debt_ratio = Decimal::from_ratio(total_debt, total_supply);
+    let payout = amount * terms.minimum_price.inv().unwrap();
+
+    let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+    assert_eq!(
+        res.attributes,
+        vec![
+            attr("action", "deposit"),
+            attr("amount", amount.to_string()),
+            attr("payout", payout.to_string()),
+            attr(
+                "expires",
+                (env.block.time.seconds() + terms.vesting_term).to_string()
+            ),
+            attr("bond_price", terms.minimum_price.to_string()),
+            attr("debt_ratio", debt_ratio.to_string())
+        ]
+    );
+
+    assert_eq!(
+        res.messages,
+        vec![SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: String::from("custom_treasury"),
+            funds: vec![],
+            msg: to_binary(&CustomTreasuryExecuteMsg::SendPayoutTokens { amount: payout }).unwrap(),
+        })),]
+    );
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: State = from_binary(&res).unwrap();
+    assert_eq!(
+        State {
+            total_debt,
+            terms: terms.clone(),
+            adjustment: Adjustment::default(),
+            last_decay: env.block.time.seconds(),
+            payout_since_last_subsidy: payout,
+            total_principal_bonded: amount,
+            total_payout_given: payout,
+        },
+        state
+    );
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::BondInfo {
+            user: String::from("depositor"),
+        },
+    )
+    .unwrap();
+    let bond_info: BondInfo = from_binary(&res).unwrap();
+    assert_eq!(
+        BondInfo {
+            payout,
+            vesting: terms.vesting_term,
+            last_time: env.block.time.seconds(),
+            true_price_paid: terms.minimum_price,
+        },
+        bond_info
+    );
 }

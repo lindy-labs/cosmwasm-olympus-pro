@@ -110,7 +110,7 @@ pub fn initialize_bond(
         vesting_term: 864000,
         minimum_price: Decimal::from_str("0.157284").unwrap(),
         max_payout: Decimal::from_ratio(2u128, 100000u128),
-        max_debt: Uint128::from(30000000000u128),
+        max_debt: Uint128::from(300000u128),
     };
     let initial_debt = Uint128::from(12500u128);
     let msg = ExecuteMsg::InitializeBond {
@@ -124,5 +124,5 @@ pub fn initialize_bond(
 }
 
 pub fn increase_time(env: &mut Env, addition: u64) {
-    env.block.time.plus_seconds(addition);
+    env.block.time = env.block.time.plus_seconds(addition);
 }
