@@ -1,5 +1,5 @@
+use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{Decimal, Deps, Fraction, MessageInfo, StdError, StdResult, Storage, Uint128};
-
 use olympus_pro::{
     custom_bond::{FeeTier, State},
     utils::get_value_of_token,
@@ -144,8 +144,8 @@ pub fn get_received_native_fund(storage: &dyn Storage, info: MessageInfo) -> Std
 }
 
 pub fn mul_decimals(a: Decimal, b: Decimal) -> Decimal {
-    Decimal::from_ratio(
-        a.numerator() * b.numerator(),
-        a.denominator() * b.denominator(),
-    )
+    let a_u256: Decimal256 = a.into();
+    let b_u256: Decimal256 = b.into();
+    let c_u256: Decimal = (b_u256 * a_u256).into();
+    c_u256
 }
