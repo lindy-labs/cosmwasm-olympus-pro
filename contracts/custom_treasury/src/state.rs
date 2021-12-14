@@ -4,14 +4,12 @@ use serde::{Deserialize, Serialize};
 use cosmwasm_std::{CanonicalAddr, StdResult, Storage};
 use cosmwasm_storage::{bucket, bucket_read, singleton, singleton_read};
 
-use terraswap::asset::AssetInfoRaw;
-
 const KEY_CONFIG: &[u8] = b"config";
 const PREFIX_KEY_BOND_WHITELIST: &[u8] = b"bond_whitelist";
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
-    pub payout_token: AssetInfoRaw,
+    pub payout_token: CanonicalAddr,
     pub policy: CanonicalAddr,
 }
 

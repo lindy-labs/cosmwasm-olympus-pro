@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConfigResponse",
+  "type": "object",
+  "required": [
+    "max_lock_period",
+    "min_lock_period",
+    "owner",
+    "underlying"
+  ],
+  "properties": {
+    "max_lock_period": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "min_lock_period": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "owner": {
+      "$ref": "#/definitions/HumanAddr"
+    },
+    "underlying": {
+      "$ref": "#/definitions/HumanAddr"
+    }
+  },
+  "definitions": {
+    "HumanAddr": {
+      "type": "string"
+    }
+  }
+}

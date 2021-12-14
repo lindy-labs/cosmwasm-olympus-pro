@@ -38,8 +38,7 @@ pub fn query_bond_info(deps: Deps, bond_id: u64) -> StdResult<BondInfoResponse> 
             .api
             .addr_humanize(&bond_info.initial_owner)?
             .to_string(),
-        tier_ceilings: bond_info.tier_ceilings,
-        fees: bond_info.fees,
+        fee_tiers: bond_info.fee_tiers,
     };
 
     Ok(resp)

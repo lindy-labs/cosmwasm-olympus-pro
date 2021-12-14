@@ -3,11 +3,11 @@ use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::Uint128;
 
-use terraswap::asset::{Asset, AssetInfo};
+use terraswap::asset::Asset;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    pub payout_token: AssetInfo,
+    pub payout_token: String,
     pub initial_owner: String,
 }
 
@@ -28,13 +28,12 @@ pub struct MigrateMsg {}
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
-    ValueOfToken { principal_asset: Asset },
     BondWhitelist { bond: String },
 }
 
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub payout_token: AssetInfo,
+    pub payout_token: String,
     pub policy: String,
 }

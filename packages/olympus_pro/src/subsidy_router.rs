@@ -1,23 +1,21 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::Uint128;
-
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct InstantiateMsg {}
+pub struct InstantiateMsg {
+    pub policy: String,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    GetSubsidyInfo {},
-    Withdraw {
-        token: String,
-        destination: String,
-        amount: Uint128,
+    UpdateConfig {
+        policy: Option<String>,
     },
+    PaySubsidy {},
     AddSubsidyController {
-        bond: String,
         subsidy_controller: String,
+        bond: String,
     },
     RemoveSubsidyController {
         subsidy_controller: String,
@@ -32,10 +30,11 @@ pub struct MigrateMsg {}
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
+    BondForController { subsidy_controller: String },
 }
 
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub owner: String,
+    pub policy: String,
 }

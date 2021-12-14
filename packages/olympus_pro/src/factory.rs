@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 
 use terraswap::asset::AssetInfo;
 
+use crate::custom_bond::FeeTier;
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub custom_bond_id: u64,
@@ -21,19 +23,17 @@ pub enum ExecuteMsg {
         policy: Option<String>,
     },
     CreateBondAndTreasury {
-        payout_token: AssetInfo,
+        payout_token: String,
         principal_token: AssetInfo,
         initial_owner: String,
-        tier_ceilings: Vec<u64>,
-        fees: Vec<u64>,
+        fee_tiers: Vec<FeeTier>,
         fee_in_payout: bool,
     },
     CreateBond {
         principal_token: AssetInfo,
         custom_treasury: String,
         initial_owner: String,
-        tier_ceilings: Vec<u64>,
-        fees: Vec<u64>,
+        fee_tiers: Vec<FeeTier>,
         fee_in_payout: bool,
     },
 }
@@ -67,6 +67,5 @@ pub struct BondInfoResponse {
     pub custom_treasury: String,
     pub bond: String,
     pub initial_owner: String,
-    pub tier_ceilings: Vec<u64>,
-    pub fees: Vec<u64>,
+    pub fee_tiers: Vec<FeeTier>,
 }

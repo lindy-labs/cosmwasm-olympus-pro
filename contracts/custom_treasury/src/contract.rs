@@ -7,9 +7,9 @@ use cosmwasm_std::{
 };
 
 use olympus_pro::custom_treasury::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
-use terraswap::asset::Asset;
+use terraswap::asset::{Asset, AssetInfo};
 
-use crate::query::{query_bond_whitelist, query_config, query_value_of_token};
+use crate::query::{query_bond_whitelist, query_config};
 use crate::state::{read_bond_whitelist, read_config, store_bond_whitelist, store_config, Config};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -22,7 +22,7 @@ pub fn instantiate(
     store_config(
         deps.storage,
         &Config {
-            payout_token: msg.payout_token.to_raw(deps.api)?,
+            payout_token: deps.api.addr_canonicalize(&msg.payout_token)?,
             policy: deps.api.addr_canonicalize(&msg.initial_owner)?,
         },
     )?;
@@ -57,9 +57,6 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
-        QueryMsg::ValueOfToken { principal_asset } => {
-            to_binary(&query_value_of_token(deps, principal_asset)?)
-        }
         QueryMsg::BondWhitelist { bond } => to_binary(&query_bond_whitelist(deps, bond)?),
     }
 }
@@ -100,7 +97,9 @@ fn send_payout_token(deps: DepsMut, info: MessageInfo, amount: Uint128) -> StdRe
         let config = read_config(deps.storage)?;
 
         let asset = Asset {
-            info: config.payout_token.to_normal(deps.api)?,
+            info: AssetInfo::Token {
+                contract_addr: deps.api.addr_humanize(&config.payout_token)?.to_string(),
+            },
             amount: amount,
         };
 
