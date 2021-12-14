@@ -47,9 +47,7 @@ pub enum ExecuteMsg {
         max_price: Decimal,
         depositor: String,
     },
-    Redeem {
-        user: String,
-    },
+    Redeem {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
