@@ -149,14 +149,12 @@ fn test_remove_subsidy_controller_by_policy() {
         ]
     );
 
-    let res = query(
+    query(
         deps.as_ref(),
         mock_env(),
         QueryMsg::BondForController {
             subsidy_controller: String::from("subsidy_controller"),
         },
     )
-    .unwrap();
-    let whitelist: bool = from_binary(&res).unwrap();
-    assert_eq!(false, whitelist);
+    .unwrap_err();
 }
