@@ -131,3 +131,9 @@ pub struct BondInfo {
     pub last_time: u64,
     pub true_price_paid: Decimal,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Default)]
+pub struct BondInfoResponse {
+    pub info: BondInfo,
+    pub pending_payout: Uint128,
+}

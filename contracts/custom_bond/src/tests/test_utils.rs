@@ -1,12 +1,15 @@
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
-use cosmwasm_std::{Decimal, Env, OwnedDeps, StdResult, Uint128};
+use cosmwasm_std::{from_binary, to_binary, Decimal, Env, OwnedDeps, StdResult, Uint128};
 use std::str::FromStr;
 
 use crate::{
-    contract::{execute, instantiate},
+    contract::{execute, instantiate, query},
     tests::mock_querier::WasmMockQuerier,
 };
-use olympus_pro::custom_bond::{ExecuteMsg, InstantiateMsg, Terms};
+use cw20::Cw20ReceiveMsg;
+use olympus_pro::custom_bond::{
+    BondInfo, BondInfoResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Terms,
+};
 use terraswap::asset::AssetInfo;
 
 pub fn instantiate_custom_bond(
@@ -121,6 +124,34 @@ pub fn initialize_bond(
     execute(deps.as_mut(), env.clone(), info, msg).unwrap();
 
     (terms, initial_debt)
+}
+
+pub fn deposit(deps: &mut OwnedDeps<MockStorage, MockApi, WasmMockQuerier>, env: Env) -> BondInfo {
+    let amount = Uint128::from(100000u128);
+    let info = mock_info("principal_token", &[]);
+    let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
+        sender: "addr".to_string(),
+        msg: to_binary(&Cw20HookMsg::Deposit {
+            max_price: Decimal::from_str("0.17476").unwrap(),
+            depositor: String::from("depositor"),
+        })
+        .unwrap(),
+        amount,
+    });
+
+    execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+    let res = query(
+        deps.as_ref(),
+        env.clone(),
+        QueryMsg::BondInfo {
+            user: String::from("depositor"),
+        },
+    )
+    .unwrap();
+    let bond_info: BondInfoResponse = from_binary(&res).unwrap();
+
+    bond_info.info
 }
 
 pub fn increase_time(env: &mut Env, addition: u64) {

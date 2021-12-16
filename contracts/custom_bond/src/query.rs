@@ -3,7 +3,7 @@ use cosmwasm_std::{
 };
 
 use olympus_pro::{
-    custom_bond::{BondInfo, ConfigResponse, State},
+    custom_bond::{BondInfoResponse, ConfigResponse, State},
     custom_treasury::{
         ConfigResponse as CustomTreasuryConfigResponse, QueryMsg as CustomTreasuryQueryMsg,
     },
@@ -12,7 +12,10 @@ use olympus_pro::{
 
 use crate::{
     state::{read_bond_info, read_config, read_state},
-    utils::{get_bond_price, get_current_debt, get_current_olympus_fee, get_payout_for},
+    utils::{
+        get_bond_price, get_current_debt, get_current_olympus_fee, get_payout_for,
+        get_pending_payout,
+    },
 };
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -55,9 +58,17 @@ pub fn query_custom_treasury_config(
     Ok(res)
 }
 
-pub fn query_bond_info(deps: Deps, user: String) -> StdResult<BondInfo> {
+pub fn query_bond_info(deps: Deps, env: Env, user: String) -> StdResult<BondInfoResponse> {
     let bond_info = read_bond_info(deps.storage, deps.api.addr_canonicalize(&user)?)?;
-    Ok(bond_info)
+
+    let time_since_last = env.block.time.seconds() - bond_info.last_time;
+
+    let pending_payout = get_pending_payout(bond_info.clone(), time_since_last);
+
+    Ok(BondInfoResponse {
+        info: bond_info,
+        pending_payout,
+    })
 }
 
 pub fn query_current_olympus_fee(deps: Deps) -> StdResult<Decimal> {

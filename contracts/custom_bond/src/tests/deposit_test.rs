@@ -7,7 +7,9 @@ use std::str::FromStr;
 
 use cw20::Cw20ReceiveMsg;
 use olympus_pro::{
-    custom_bond::{Adjustment, BondInfo, Cw20HookMsg, ExecuteMsg, QueryMsg, State},
+    custom_bond::{
+        Adjustment, BondInfo, BondInfoResponse, Cw20HookMsg, ExecuteMsg, QueryMsg, State,
+    },
     custom_treasury::ExecuteMsg as CustomTreasuryExecuteMsg,
 };
 use terraswap::asset::AssetInfo;
@@ -327,13 +329,13 @@ fn test_first_deposit() {
 
     let res = query(
         deps.as_ref(),
-        mock_env(),
+        env.clone(),
         QueryMsg::BondInfo {
             user: String::from("depositor"),
         },
     )
     .unwrap();
-    let bond_info: BondInfo = from_binary(&res).unwrap();
+    let bond_info: BondInfoResponse = from_binary(&res).unwrap();
     assert_eq!(
         BondInfo {
             payout,
@@ -341,6 +343,6 @@ fn test_first_deposit() {
             last_time: env.block.time.seconds(),
             true_price_paid: terms.minimum_price,
         },
-        bond_info
+        bond_info.info
     );
 }

@@ -1,7 +1,7 @@
 use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{Decimal, Deps, Fraction, MessageInfo, StdError, StdResult, Storage, Uint128};
 use olympus_pro::{
-    custom_bond::{FeeTier, State},
+    custom_bond::{BondInfo, FeeTier, State},
     utils::get_value_of_token,
 };
 use terraswap::asset::{Asset, AssetInfoRaw};
@@ -152,6 +152,19 @@ pub fn get_received_native_fund(storage: &dyn Storage, info: MessageInfo) -> Std
     } else {
         Err(StdError::generic_err("not support cw20 token"))
     }
+}
+
+pub fn get_pending_payout(bond_info: BondInfo, time_since_last: u64) -> Uint128 {
+    let mut payout = bond_info.payout
+        * Decimal::from_ratio(
+            Uint128::from(time_since_last as u128),
+            Uint128::from(bond_info.vesting as u128),
+        );
+    if payout > bond_info.payout {
+        payout = bond_info.payout;
+    }
+
+    payout
 }
 
 pub fn decimal_multiplication_in_256(a: Decimal, b: Decimal) -> Decimal {

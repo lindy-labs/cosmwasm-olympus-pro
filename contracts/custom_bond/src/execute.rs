@@ -18,7 +18,7 @@ use crate::{
     },
     utils::{
         adjust, decay_debt, decimal_multiplication_in_256, get_current_debt, get_debt_ratio,
-        get_max_payout, get_payout_for, get_true_bond_price,
+        get_max_payout, get_payout_for, get_pending_payout, get_true_bond_price,
     },
 };
 
@@ -343,14 +343,7 @@ pub fn redeem(deps: DepsMut, env: Env, user: String) -> StdResult<Response> {
 
     let time_since_last = env.block.time.seconds() - bond_info.last_time;
 
-    let mut payout = bond_info.payout
-        * Decimal::from_ratio(
-            Uint128::from(time_since_last as u128),
-            Uint128::from(bond_info.vesting as u128),
-        );
-    if payout > bond_info.payout {
-        payout = bond_info.payout;
-    }
+    let payout = get_pending_payout(bond_info.clone(), time_since_last);
 
     if payout.is_zero() {
         return Err(StdError::generic_err("nothing to redeem"));
