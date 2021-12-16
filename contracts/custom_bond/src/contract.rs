@@ -113,7 +113,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::PayoutFor { value } => to_binary(&query_payout_for(deps, env, value)?),
         QueryMsg::CurrentDebt {} => to_binary(&query_current_debt(deps, env)?),
         QueryMsg::CurrentOlympusFee {} => to_binary(&query_current_olympus_fee(deps)?),
-        QueryMsg::BondInfo { user } => to_binary(&query_bond_info(deps, user)?),
+        QueryMsg::BondInfo { user } => to_binary(&query_bond_info(deps, env, user)?),
     }
 }
 
