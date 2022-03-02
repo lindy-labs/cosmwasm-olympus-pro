@@ -11,7 +11,7 @@ use olympus_pro::{
 };
 
 use crate::{
-    state::{read_bond_info, read_config, read_state},
+    state::{BOND_INFOS, CONFIGURATION, STATE},
     utils::{
         get_bond_price, get_current_debt, get_current_olympus_fee, get_payout_for,
         get_pending_payout,
@@ -19,7 +19,7 @@ use crate::{
 };
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
-    let config = read_config(deps.storage)?;
+    let config = CONFIGURATION.load(deps.storage)?;
 
     let resp = ConfigResponse {
         custom_treasury: deps.api.addr_humanize(&config.custom_treasury)?.to_string(),
@@ -40,7 +40,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 }
 
 pub fn query_state(deps: Deps) -> StdResult<State> {
-    let state = read_state(deps.storage)?;
+    let state = STATE.load(deps.storage)?;
 
     Ok(state)
 }
@@ -59,7 +59,7 @@ pub fn query_custom_treasury_config(
 }
 
 pub fn query_bond_info(deps: Deps, env: Env, user: String) -> StdResult<BondInfoResponse> {
-    let bond_info = read_bond_info(deps.storage, deps.api.addr_canonicalize(&user)?)?;
+    let bond_info = BOND_INFOS.load(deps.storage, deps.api.addr_canonicalize(&user)?.as_slice())?;
 
     let time_since_last = env.block.time.seconds() - bond_info.last_time;
 
@@ -72,14 +72,14 @@ pub fn query_bond_info(deps: Deps, env: Env, user: String) -> StdResult<BondInfo
 }
 
 pub fn query_current_olympus_fee(deps: Deps) -> StdResult<Decimal> {
-    let config = read_config(deps.storage)?;
-    let state = read_state(deps.storage)?;
+    let config = CONFIGURATION.load(deps.storage)?;
+    let state = STATE.load(deps.storage)?;
     Ok(get_current_olympus_fee(config, state))
 }
 
 pub fn query_bond_price(deps: Deps, env: Env) -> StdResult<Decimal> {
-    let config = read_config(deps.storage)?;
-    let state = read_state(deps.storage)?;
+    let config = CONFIGURATION.load(deps.storage)?;
+    let state = STATE.load(deps.storage)?;
 
     let payout_total_supply = query_token_supply(
         &deps.querier,
@@ -94,8 +94,8 @@ pub fn query_bond_price(deps: Deps, env: Env) -> StdResult<Decimal> {
 }
 
 pub fn query_payout_for(deps: Deps, env: Env, value: Uint128) -> StdResult<(Uint128, Uint128)> {
-    let config = read_config(deps.storage)?;
-    let state = read_state(deps.storage)?;
+    let config = CONFIGURATION.load(deps.storage)?;
+    let state = STATE.load(deps.storage)?;
 
     let payout_total_supply = query_token_supply(
         &deps.querier,
@@ -105,15 +105,14 @@ pub fn query_payout_for(deps: Deps, env: Env, value: Uint128) -> StdResult<(Uint
     Ok(get_payout_for(
         deps,
         config,
-        state,
+        state.clone(),
         value,
-        payout_total_supply,
-        env.block.time.seconds(),
+        get_bond_price(state, payout_total_supply, env.block.time.seconds()),
     )?)
 }
 
 pub fn query_current_debt(deps: Deps, env: Env) -> StdResult<Uint128> {
-    let state = read_state(deps.storage)?;
+    let state = STATE.load(deps.storage)?;
 
     Ok(get_current_debt(state, env.block.time.seconds()))
 }
