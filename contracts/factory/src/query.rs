@@ -1,10 +1,10 @@
 use cosmwasm_std::{Deps, StdResult};
 
-use crate::state::{read_bond_info, read_config, read_state, State};
+use crate::state::{State, BOND_INFOS, CONFIGURATION, STATE};
 use olympus_pro::factory::{BondInfoResponse, ConfigResponse};
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
-    let config = read_config(deps.storage)?;
+    let config = CONFIGURATION.load(deps.storage)?;
 
     let resp = ConfigResponse {
         custom_bond_id: config.custom_bond_id,
@@ -19,13 +19,11 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 }
 
 pub fn query_state(deps: Deps) -> StdResult<State> {
-    let state = read_state(deps.storage)?;
-
-    Ok(state)
+    Ok(STATE.load(deps.storage)?)
 }
 
 pub fn query_bond_info(deps: Deps, bond_id: u64) -> StdResult<BondInfoResponse> {
-    let bond_info = read_bond_info(deps.storage, bond_id)?;
+    let bond_info = BOND_INFOS.load(deps.storage, &bond_id.to_be_bytes())?;
 
     let resp = BondInfoResponse {
         principal_token: bond_info.principal_token.to_normal(deps.api)?,

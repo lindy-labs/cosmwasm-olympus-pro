@@ -17,8 +17,7 @@ use terraswap::asset::AssetInfo;
 use crate::query::{query_bond_info, query_config, query_state};
 use crate::response::MsgInstantiateContractResponse;
 use crate::state::{
-    read_config, read_temp_bond_info, remove_temp_bond_info, store_config, store_new_bond_info,
-    store_state, store_temp_bond_info, BondInfo, Config, State, TempBondInfo,
+    BondInfo, Config, State, TempBondInfo, BOND_INFOS, CONFIGURATION, STATE, TEMP_BOND_INFO,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -28,7 +27,7 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
-    store_config(
+    CONFIGURATION.save(
         deps.storage,
         &Config {
             custom_bond_id: msg.custom_bond_id,
@@ -40,7 +39,7 @@ pub fn instantiate(
         },
     )?;
 
-    store_state(deps.storage, &State { bond_length: 0 })?;
+    STATE.save(deps.storage, &State { bond_length: 0 })?;
 
     Ok(Response::default())
 }
@@ -132,7 +131,9 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Respons
 }
 
 fn assert_policy_privilege(deps: Deps, info: MessageInfo) -> StdResult<()> {
-    if read_config(deps.storage)?.policy != deps.api.addr_canonicalize(info.sender.as_str())? {
+    if CONFIGURATION.load(deps.storage)?.policy
+        != deps.api.addr_canonicalize(info.sender.as_str())?
+    {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -145,7 +146,7 @@ fn update_config(
     custom_treasury_id: Option<u64>,
     policy: Option<String>,
 ) -> StdResult<Response> {
-    let mut config = read_config(deps.storage)?;
+    let mut config = CONFIGURATION.load(deps.storage)?;
 
     if let Some(custom_bond_id) = custom_bond_id {
         config.custom_bond_id = custom_bond_id;
@@ -159,7 +160,7 @@ fn update_config(
         config.policy = deps.api.addr_canonicalize(&policy)?;
     }
 
-    store_config(deps.storage, &config)?;
+    CONFIGURATION.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attributes(vec![attr("action", "update_config")]))
 }
@@ -173,9 +174,9 @@ fn create_bond_and_treasury(
     fee_tiers: Vec<FeeTier>,
     fee_in_payout: bool,
 ) -> StdResult<Response> {
-    let config = read_config(deps.storage)?;
+    let config = CONFIGURATION.load(deps.storage)?;
 
-    store_temp_bond_info(
+    TEMP_BOND_INFO.save(
         deps.storage,
         &TempBondInfo {
             principal_token: principal_token.to_raw(deps.api)?,
@@ -207,13 +208,13 @@ fn create_bond_and_treasury(
 }
 
 fn create_bond_from_temp(deps: DepsMut, env: Env, custom_treasury: String) -> StdResult<Response> {
-    let mut temp_bond_info = read_temp_bond_info(deps.storage)?;
+    let mut temp_bond_info = TEMP_BOND_INFO.load(deps.storage)?;
 
     temp_bond_info.custom_treasury = Some(deps.api.addr_canonicalize(&custom_treasury)?);
 
-    store_temp_bond_info(deps.storage, &temp_bond_info)?;
+    TEMP_BOND_INFO.save(deps.storage, &temp_bond_info)?;
 
-    let config = read_config(deps.storage)?;
+    let config = CONFIGURATION.load(deps.storage)?;
 
     Ok(Response::new()
         .add_attributes(vec![("action", "create_bond")])
@@ -228,7 +229,7 @@ fn create_bond_from_temp(deps: DepsMut, env: Env, custom_treasury: String) -> St
                 msg: to_binary(&CustomBondInstantiateMsg {
                     custom_treasury: custom_treasury.clone(),
                     principal_token: temp_bond_info.principal_token.to_normal(deps.api)?,
-                    olympus_treasury: custom_treasury,
+                    olympus_treasury: deps.api.addr_humanize(&config.treasury)?.to_string(),
                     subsidy_router: deps.api.addr_humanize(&config.subsidy_router)?.to_string(),
                     initial_owner: deps
                         .api
@@ -253,9 +254,9 @@ fn create_bond(
     fee_tiers: Vec<FeeTier>,
     fee_in_payout: bool,
 ) -> StdResult<Response> {
-    let config = read_config(deps.storage)?;
+    let config = CONFIGURATION.load(deps.storage)?;
 
-    store_temp_bond_info(
+    TEMP_BOND_INFO.save(
         deps.storage,
         &TempBondInfo {
             principal_token: principal_token.to_raw(deps.api)?,
@@ -293,10 +294,13 @@ fn create_bond(
 }
 
 fn register_bond(deps: DepsMut, bond: String) -> StdResult<Response> {
-    let temp_bond_info = read_temp_bond_info(deps.storage)?;
+    let temp_bond_info = TEMP_BOND_INFO.load(deps.storage)?;
 
-    store_new_bond_info(
+    let mut state = STATE.load(deps.storage)?;
+
+    BOND_INFOS.save(
         deps.storage,
+        &state.bond_length.to_be_bytes(),
         &BondInfo {
             principal_token: temp_bond_info.principal_token,
             custom_treasury: temp_bond_info.custom_treasury.unwrap(),
@@ -306,7 +310,11 @@ fn register_bond(deps: DepsMut, bond: String) -> StdResult<Response> {
         },
     )?;
 
-    remove_temp_bond_info(deps.storage);
+    state.bond_length += 1;
+
+    STATE.save(deps.storage, &state)?;
+
+    TEMP_BOND_INFO.remove(deps.storage);
 
     Ok(Response::default())
 }
