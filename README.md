@@ -1,4 +1,4 @@
-# Olympus Pro contract on terra
+# Olympus Pro contract on Terra
 
 ## Development
 
@@ -41,7 +41,7 @@ sha256sum cw1_subkeys.wasm
 
 #### Production
 
-For production builds, run the following:
+For production builds, run:
 
 ```sh
 docker run --rm -v "$(pwd)":/code \
@@ -51,5 +51,3 @@ docker run --rm -v "$(pwd)":/code \
 ```
 
 This performs several optimizations which can significantly reduce the final size of the contract binaries, which will be available inside the `artifacts/` directory.
-
-## License
