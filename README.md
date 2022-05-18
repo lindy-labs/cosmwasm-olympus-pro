@@ -1,4 +1,4 @@
-# Olympus Pro contract in CosmWasm
+# Olympus Pro contracts in CosmWasm
 
 ## Development
 
