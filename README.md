@@ -1,4 +1,4 @@
-# Olympus Pro contract on Terra
+# Olympus Pro contract in CosmWasm
 
 ## Development
 
