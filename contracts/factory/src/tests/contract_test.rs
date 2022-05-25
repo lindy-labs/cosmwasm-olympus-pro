@@ -411,7 +411,7 @@ fn test_create_bond_and_treasury_reqeust_create_bond_on_first_reply() {
                     principal_token: AssetInfo::NativeToken {
                         denom: String::from("principal"),
                     },
-                    olympus_treasury: String::from("treasury0"),
+                    olympus_treasury: String::from("treasury"),
                     subsidy_router: String::from("subsidy_router"),
                     initial_owner: String::from("initial_owner"),
                     olympus_dao: String::from("olympus_dao"),

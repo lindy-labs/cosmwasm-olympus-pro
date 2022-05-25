@@ -10,7 +10,7 @@ use olympus_pro::custom_treasury::{ExecuteMsg, InstantiateMsg, MigrateMsg, Query
 use terraswap::asset::{Asset, AssetInfo};
 
 use crate::query::{query_bond_whitelist, query_config};
-use crate::state::{read_bond_whitelist, read_config, store_bond_whitelist, store_config, Config};
+use crate::state::{Config, BOND_WHITELISTS, CONFIGURATION};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -19,7 +19,7 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
-    store_config(
+    CONFIGURATION.save(
         deps.storage,
         &Config {
             payout_token: deps.api.addr_canonicalize(&msg.payout_token)?,
@@ -67,7 +67,9 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Respons
 }
 
 fn assert_policy_privilege(deps: Deps, info: MessageInfo) -> StdResult<()> {
-    if read_config(deps.storage)?.policy != deps.api.addr_canonicalize(info.sender.as_str())? {
+    if CONFIGURATION.load(deps.storage)?.policy
+        != deps.api.addr_canonicalize(info.sender.as_str())?
+    {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -75,26 +77,27 @@ fn assert_policy_privilege(deps: Deps, info: MessageInfo) -> StdResult<()> {
 }
 
 fn update_config(deps: DepsMut, policy: Option<String>) -> StdResult<Response> {
-    let mut config = read_config(deps.storage)?;
+    let mut config = CONFIGURATION.load(deps.storage)?;
 
     if let Some(policy) = policy {
         config.policy = deps.api.addr_canonicalize(&policy)?;
     }
 
-    store_config(deps.storage, &config)?;
+    CONFIGURATION.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attributes(vec![attr("action", "update_config")]))
 }
 
 fn send_payout_token(deps: DepsMut, info: MessageInfo, amount: Uint128) -> StdResult<Response> {
-    let whitelist = read_bond_whitelist(
-        deps.storage,
-        &deps.api.addr_canonicalize(info.sender.as_str())?,
-    )
-    .unwrap_or_default();
+    let whitelist = BOND_WHITELISTS
+        .load(
+            deps.storage,
+            deps.api.addr_canonicalize(info.sender.as_str())?.as_slice(),
+        )
+        .unwrap_or_default();
 
     if whitelist {
-        let config = read_config(deps.storage)?;
+        let config = CONFIGURATION.load(deps.storage)?;
 
         let asset = Asset {
             info: AssetInfo::Token {
@@ -130,9 +133,9 @@ fn withdraw(deps: DepsMut, asset: Asset, recipient: String) -> StdResult<Respons
 }
 
 fn whitelist_bond(deps: DepsMut, bond: String, whitelist: bool) -> StdResult<Response> {
-    store_bond_whitelist(
+    BOND_WHITELISTS.save(
         deps.storage,
-        &deps.api.addr_canonicalize(&bond)?,
+        deps.api.addr_canonicalize(&bond)?.as_slice(),
         &whitelist,
     )?;
 

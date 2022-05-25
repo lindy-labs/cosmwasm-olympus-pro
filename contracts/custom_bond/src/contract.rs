@@ -21,7 +21,7 @@ use crate::{
         query_bond_info, query_bond_price, query_config, query_current_debt,
         query_current_olympus_fee, query_custom_treasury_config, query_payout_for, query_state,
     },
-    state::{read_config, store_config, store_state, Config},
+    state::{Config, CONFIGURATION, STATE},
     utils::get_received_native_fund,
 };
 
@@ -39,7 +39,7 @@ pub fn instantiate(
         query_token_decimals(&deps.querier, custom_treasury_config.payout_token.clone())?;
     let principal_decimals = query_decimals(&deps.querier, &msg.principal_token)?;
 
-    store_config(
+    CONFIGURATION.save(
         deps.storage,
         &Config {
             custom_treasury: deps.api.addr_canonicalize(&msg.custom_treasury)?,
@@ -58,7 +58,7 @@ pub fn instantiate(
         },
     )?;
 
-    store_state(deps.storage, &State::default())?;
+    STATE.save(deps.storage, &State::default())?;
 
     Ok(Response::default())
 }
@@ -133,7 +133,7 @@ pub fn receive_cw20(
             max_price,
             depositor,
         } => {
-            let config = read_config(deps.storage)?;
+            let config = CONFIGURATION.load(deps.storage)?;
             if let AssetInfoRaw::Token { contract_addr } = config.principal_token {
                 if deps.api.addr_humanize(&contract_addr)? == info.sender.clone() {
                     return deposit(deps, env, cw20_msg.amount, max_price, depositor);
@@ -144,10 +144,11 @@ pub fn receive_cw20(
     }
 }
 
-fn assert_policy_privilege(deps: Deps, info: MessageInfo) -> StdResult<()> {
-    if read_config(deps.storage)?.policy != deps.api.addr_canonicalize(info.sender.as_str())? {
+fn assert_policy_privilege(deps: Deps, info: MessageInfo) -> StdResult<Config> {
+    let config = CONFIGURATION.load(deps.storage)?;
+    if config.policy != deps.api.addr_canonicalize(info.sender.as_str())? {
         return Err(StdError::generic_err("unauthorized"));
     }
 
-    Ok(())
+    Ok(config)
 }

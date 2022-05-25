@@ -6,7 +6,7 @@ use olympus_pro::{
 };
 use terraswap::asset::{Asset, AssetInfoRaw};
 
-use crate::state::{read_config, Config};
+use crate::state::{Config, CONFIGURATION};
 
 fn get_debt_decay(state: State, current_time: u64) -> Uint128 {
     let time_since_last = current_time - state.last_decay;
@@ -64,13 +64,7 @@ pub fn get_bond_price(state: State, payout_total_supply: Uint128, current_time: 
     std::cmp::max(price, state.terms.minimum_price)
 }
 
-pub fn get_true_bond_price(
-    config: Config,
-    state: State,
-    payout_total_supply: Uint128,
-    current_time: u64,
-) -> Decimal {
-    let bond_price = get_bond_price(state.clone(), payout_total_supply, current_time);
+pub fn get_true_bond_price(config: Config, state: State, bond_price: Decimal) -> Decimal {
     decimal_summation_in_256(
         bond_price,
         decimal_multiplication_in_256(bond_price, get_current_olympus_fee(config, state)),
@@ -82,12 +76,9 @@ pub fn get_payout_for(
     config: Config,
     state: State,
     value: Uint128,
-    payout_total_supply: Uint128,
-    current_time: u64,
+    bond_price: Decimal,
 ) -> StdResult<(Uint128, Uint128)> {
     let current_olympus_fee = get_current_olympus_fee(config.clone(), state.clone());
-
-    let bond_price = get_bond_price(state.clone(), payout_total_supply, current_time);
 
     if config.fee_in_payout {
         let total = value * bond_price.inv().unwrap();
@@ -136,7 +127,7 @@ pub fn adjust(state: &mut State, current_time: u64) -> StdResult<(bool, Decimal)
 }
 
 pub fn get_received_native_fund(storage: &dyn Storage, info: MessageInfo) -> StdResult<Uint128> {
-    let config = read_config(storage)?;
+    let config = CONFIGURATION.load(storage)?;
 
     if info.funds.len() != 1u64 as usize {
         return Err(StdError::generic_err("invalid denom received"));

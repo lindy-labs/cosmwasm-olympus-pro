@@ -5,7 +5,7 @@ use cosmwasm_std::{
 };
 use std::str::FromStr;
 
-use cw20::Cw20ReceiveMsg;
+use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use olympus_pro::{
     custom_bond::{
         Adjustment, BondInfo, BondInfoResponse, Cw20HookMsg, ExecuteMsg, QueryMsg, State,
@@ -305,11 +305,23 @@ fn test_first_deposit() {
 
     assert_eq!(
         res.messages,
-        vec![SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: String::from("custom_treasury"),
-            funds: vec![],
-            msg: to_binary(&CustomTreasuryExecuteMsg::SendPayoutTokens { amount: payout }).unwrap(),
-        })),]
+        vec![
+            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: String::from("principal_token"),
+                funds: vec![],
+                msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                    recipient: String::from("custom_treasury"),
+                    amount: amount
+                })
+                .unwrap(),
+            })),
+            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: String::from("custom_treasury"),
+                funds: vec![],
+                msg: to_binary(&CustomTreasuryExecuteMsg::SendPayoutTokens { amount: payout })
+                    .unwrap(),
+            })),
+        ]
     );
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
